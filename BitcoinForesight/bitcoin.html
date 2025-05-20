@@ -1,0 +1,1833 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitcoinForesight | AI-Powered Bitcoin Price Predictions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        :root {
+            --primary: #3a7bd5;
+            --primary-dark: #2a5cb5;
+            --primary-gradient: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            --secondary: #f7931a;
+            --dark: #0f1629;
+            --darker: #060c18;
+            --light: #f5f5f5;
+            --success: #00c853;
+            --danger: #ff3d71;
+            --neutral-color: var(--primary);
+            --bitcoin: #f7931a;
+            --historical: #3a7bd5;
+            --prediction: #ff3d71;
+            --chart-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--darker);
+            color: var(--light);
+            min-height: 100vh;
+            position: relative;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(58, 123, 213, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(247, 147, 26, 0.15) 0%, transparent 25%);
+        }
+
+        .login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(15, 22, 41, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            z-index: 1;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 992px) {
+            .login-page .container {
+                max-width: 700px;
+            }
+        }
+
+        .background-glow {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .glow-1 {
+            background: rgba(58, 123, 213, 0.5);
+            top: -60px;
+            left: -60px;
+        }
+
+        .glow-2 {
+            background: rgba(247, 147, 26, 0.4);
+            bottom: -60px;
+            right: -60px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 35px;
+            position: relative;
+        }
+
+        .logo-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            z-index: 2;
+            filter: drop-shadow(0 5px 15px rgba(58, 123, 213, 0.3));
+        }
+
+        .logo-bg {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            filter: blur(45px);
+            opacity: 0.6;
+            z-index: 1;
+            animation: pulse 4s infinite alternate;
+        }
+
+        @media (max-width: 767px) {
+            .logo { width: 80px; height: 80px; }
+            .logo-bg { width: 110px; height: 110px; filter: blur(25px); }
+        }
+        @media (max-width: 320px) {
+            .logo { width: 70px; height: 70px; }
+            .logo-bg { width: 100px; height: 100px; filter: blur(20px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--light);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            margin-bottom: 40px;
+            letter-spacing: 0.3px;
+            font-weight: 300;
+        }
+        .form-group { margin-bottom: 25px; position: relative; }
+        label { display: block; margin-bottom: 10px; font-weight: 500; font-size: 14px; color: rgba(255, 255, 255, 0.9); letter-spacing: 0.3px; transition: all 0.3s ease; }
+        .input-group { position: relative; }
+        .input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255, 255, 255, 0.6); font-size: 18px; z-index: 2; transition: all 0.3s ease; }
+        input { width: 100%; padding: 16px 15px 16px 45px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); color: var(--light); font-size: 15px; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        input:focus { outline: none; border-color: var(--primary); background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 0 4px rgba(58, 123, 213, 0.15); }
+        input:focus + .input-icon { color: var(--primary); }
+        button { width: 100%; padding: 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 15px; position: relative; overflow: hidden; letter-spacing: 0.5px; box-shadow: 0 10px 25px -5px rgba(58, 123, 213, 0.5); }
+        button::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); transition: 0.6s; }
+        button:hover { transform: translateY(-3px); background: linear-gradient(135deg, #4a8bdf, #10d9ff); box-shadow: 0 15px 30px -7px rgba(58, 123, 213, 0.6); }
+        button:hover::before { left: 100%; }
+        button:active { transform: translateY(-1px); box-shadow: 0 5px 15px -5px rgba(58, 123, 213, 0.6); }
+        .links { display: flex; justify-content: space-between; margin-top: 25px; font-size: 14px; }
+        .links a { color: rgba(255, 255, 255, 0.7); text-decoration: none; transition: all 0.3s ease; position: relative; padding: 3px 0; }
+        .links a::after { content: ''; position: absolute; width: 0; height: 1px; bottom: 0; left: 0; background: var(--primary); transition: width 0.3s ease; }
+        .links a:hover { color: var(--primary); }
+        .links a:hover::after { width: 100%; }
+        .market-stats { margin-bottom: 35px; margin-top: 0; }
+        .stats-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255, 255, 255, 0.6); margin-bottom: 20px; text-align: center; font-weight: 500; }
+        .stats-container { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 15px; }
+        .stat-item { text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px 10px; flex: 1 1 120px; min-width: 100px; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 0.3s ease; }
+        .stat-item:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-2px); }
+        .stat-value { font-size: 18px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+        .up { color: var(--success); }
+        .down { color: var(--danger); }
+        .stat-label { font-size: 12px; color: rgba(255, 255, 255, 0.5); font-weight: 400; white-space: nowrap; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--dark); padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); position: relative; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; color: rgba(255, 255, 255, 0.5); transition: color 0.3s; line-height: 1; }
+        .close-modal:hover { color: var(--danger); }
+        .modal-title { margin-bottom: 20px; font-size: 22px; color: var(--light); text-align: center; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        #welcome-modal {}
+        .welcome-modal-content { max-width: 400px; text-align: center; padding: 25px; }
+        .welcome-modal-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+        .welcome-modal-icon { font-size: 36px; color: var(--primary); margin-bottom: 10px; padding: 10px; border-radius: 50%; background-color: rgba(58, 123, 213, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        #welcome-modal-title { font-size: 20px; margin-bottom: 0; background: none; -webkit-background-clip: unset; background-clip: unset; -webkit-text-fill-color: var(--light); color: var(--light); }
+        .welcome-modal-text { font-size: 14px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin-bottom: 25px; }
+        #welcome-modal-ok-btn { width: auto; padding: 10px 25px; margin-top: 0; font-size: 15px; }
+        .alert { padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+        .alert-success { background: rgba(0, 200, 83, 0.15); border: 1px solid rgba(0, 200, 83, 0.3); color: var(--success); }
+        .alert-error { background: rgba(255, 61, 113, 0.15); border: 1px solid rgba(255, 61, 113, 0.3); color: var(--danger); }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .dashboard-page { display: none; min-height: 100vh; overflow-x: auto; background-image: radial-gradient(circle at 10% 20%, rgba(58, 123, 213, 0.1) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(247, 147, 26, 0.1) 0%, transparent 20%); }
+        .horizontal-dashboard { display: flex; min-height: 100vh; padding: 20px; gap: 20px; }
+        .sidebar { width: 80px; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px 10px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; z-index: 1; }
+        .sidebar .logo-container { margin-bottom: 40px; }
+        .sidebar .logo { width: 50px; height: 50px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .sidebar .logo svg { width: 100%; height: 100%; position: relative; z-index: 2; }
+        .sidebar .logo-bg { position: absolute; width: 60px; height: 60px; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--primary-gradient); border-radius: 50%; filter: blur(15px); opacity: 0.5; z-index: 1; animation: none; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; align-items: center; gap: 25px; width: 100%; }
+        .sidebar-menu a { display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; width: 50px; height: 50px; border-radius: 12px; transition: all 0.3s ease; position: relative; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(58, 123, 213, 0.2); color: var(--light); }
+        .sidebar-menu i { font-size: 22px; }
+        .sidebar-menu .tooltip { position: absolute; left: 70px; background: rgba(0, 0, 0, 0.7); padding: 5px 10px; border-radius: 6px; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap; z-index: 10; }
+        .sidebar-menu a:hover .tooltip { opacity: 1; }
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 15px 25px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); z-index: 1; }
+        .page-title { font-size: 22px; font-weight: 600; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .user-nav { display: flex; align-items: center; gap: 20px; }
+        .notification { position: relative; cursor: pointer; color: rgba(255, 255, 255, 0.7); transition: color 0.3s ease; }
+        .notification:hover { color: var(--light); }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; display: none; }
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .user-name { color: var(--light); font-weight: 500; font-size: 14px; }
+        .horizontal-stats { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .stat-card { min-width: 200px; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card .stat-title-card { font-size: 14px; color: rgba(255, 255, 255, 0.6); margin-bottom: 10px; }
+        .stat-card .stat-value { font-size: 24px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .stat-change { font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .chart-row { display: flex; gap: 20px; flex: 1; min-height: 0; }
+        .chart-container { flex: 2; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .chart-title { font-size: 16px; font-weight: 600; }
+        .chart-actions { display: flex; gap: 10px; }
+        .time-filter { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 6px 12px; color: rgba(255, 255, 255, 0.8); font-size: 12px; cursor: pointer; transition: all 0.3s ease; }
+        .time-filter:hover { background: rgba(255, 255, 255, 0.1); }
+        .time-filter.active { background: var(--primary); color: white; }
+        .chart-placeholder { flex: 1; background: rgba(255, 255, 255, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.3); font-size: 14px; }
+        .forecast-container { flex: 1; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; }
+        .forecast-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .forecast-title { font-size: 16px; font-weight: 600; }
+        .forecast-cards { flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 400px; padding-right: 5px; }
+        .forecast-cards::-webkit-scrollbar { width: 6px; }
+        .forecast-cards::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+        .forecast-cards::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+        .forecast-cards::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        .forecast-card { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+        .forecast-card:hover { background: rgba(255, 255, 255, 0.1); }
+        .forecast-date { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px; }
+        .forecast-value { font-size: 18px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .forecast-sentiment { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+        .bullish { background: rgba(0, 200, 83, 0.2); color: var(--success); }
+        .bearish { background: rgba(255, 61, 113, 0.2); color: var(--danger); }
+        .neutral { background: rgba(58, 123, 213, 0.2); color: var(--neutral-color); }
+        .prediction-section { background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); margin-top: 20px; margin-bottom: 20px; }
+        .prediction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .prediction-title { font-size: 18px; font-weight: 600; color: var(--light); }
+        .prediction-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .prediction-controls { display: flex; flex-direction: column; gap: 20px; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .control-label { font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+        .control-select { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 15px; color: var(--light); font-size: 14px; transition: all 0.3s ease; width: 100%; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffffa0'%3E%3Cpath fill-rule='evenodd' d='M8 10a.75.75 0 0 1-.53-.22l-3-3a.75.75 0 1 1 1.06-1.06L8 8.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3 3A.75.75 0 0 1 8 10Z' clip-rule='evenodd' /%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px 16px; padding-right: 35px; }
+        .control-select:focus { outline: none; border-color: var(--primary); }
+        .control-select option { background-color: var(--dark); color: var(--light); padding: 8px 10px; }
+        .control-select::-webkit-scrollbar { width: 8px; }
+        .control-select::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        .control-select::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        .control-select::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        .confidence-slider { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(255, 255, 255, 0.1); border-radius: 3px; outline: none; margin-top: 10px; cursor: pointer; }
+        .confidence-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; border: 2px solid white; transition: background-color 0.2s ease; }
+        .confidence-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; border: 2px solid white; transition: background-color 0.2s ease; }
+        .confidence-slider::-webkit-slider-thumb:hover { background: var(--primary-dark); }
+        .confidence-slider::-moz-range-thumb:hover { background: var(--primary-dark); }
+        .confidence-labels { display: flex; justify-content: space-between; margin-top: 5px; }
+        .confidence-label { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+        .prediction-button { background: var(--primary-gradient); color: white; border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .prediction-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(58, 123, 213, 0.4); }
+        .prediction-button:disabled { opacity: 0.7; cursor: not-allowed; }
+        .prediction-results { display: flex; flex-direction: column; gap: 20px; }
+        .prediction-chart-container { position: relative; height: 300px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 15px; overflow: hidden; }
+        .chart-canvas { width: 100%; height: 100%; }
+        .chart-legend { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255, 255, 255, 0.8); }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+        .historical-color { background: var(--historical); }
+        .prediction-color { background: var(--prediction); }
+        .signal-marker { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; }
+        .buy-signal { background: var(--success); box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.3); }
+        .sell-signal { background: var(--danger); box-shadow: 0 0 0 3px rgba(255, 61, 113, 0.3); }
+        .signal-tooltip { position: absolute; background: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 6px; font-size: 12px; pointer-events: none; z-index: 100; white-space: nowrap; transform: translate(-50%, -130%); opacity: 0; transition: opacity 0.2s; bottom: 15px; left: 50%; }
+        .signal-marker:hover .signal-tooltip { opacity: 1; }
+        .sentiment-analysis { background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 15px; }
+        .sentiment-title-box { font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-bottom: 15px; }
+        .sentiment-bars { display: flex; gap: 10px; height: 20px; border-radius: 10px; overflow: hidden; }
+        .sentiment-bar { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white; transition: width 0.5s ease; }
+        .sentiment-bar.positive { background: var(--success); }
+        .sentiment-bar.negative { background: var(--danger); }
+        .sentiment-bar.neutral { background: var(--neutral-color); color: white; }
+        .sentiment-sources { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px; }
+        .source-selector { display: flex; gap: 10px; }
+        .source-button { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.3s ease; color: rgba(255, 255, 255, 0.7); }
+        .source-button:hover { background: rgba(255, 255, 255, 0.1); color: var(--light); }
+        .source-button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .sentiment-donut { position: relative; width: 120px; height: 120px; margin: 20px auto; }
+        .donut-chart { width: 100%; height: 100%; }
+        .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .donut-value { font-size: 24px; font-weight: 600; margin-bottom: 2px; color: var(--light); }
+        .donut-label { font-size: 12px; color: rgba(255, 255, 255, 0.7); }
+        .background-glow { position: fixed; width: 300px; height: 300px; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.3; }
+        .dropdown-menu { position: absolute; right: 0; top: 55px; background: rgba(15, 22, 41, 0.95); border-radius: 8px; padding: 10px 0; min-width: 180px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; z-index: 100; }
+        .dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0px); }
+        .dropdown-item { padding: 8px 15px; color: rgba(255, 255, 255, 0.8); text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 14px; transition: all 0.2s ease; }
+        .dropdown-item:hover { background: rgba(58, 123, 213, 0.2); color: white; }
+        .dropdown-divider { height: 1px; background: rgba(255, 255, 255, 0.1); margin: 5px 0; }
+        .section-container { display: none; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); margin-bottom: 20px; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section-header { margin-bottom: 20px; }
+        .section-header h2 { font-size: 22px; margin-bottom: 5px; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .section-header p { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+        .indicators-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .indicator-card { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; display: flex; flex-direction: column; }
+        .indicator-card:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-3px); }
+        .indicator-card h3 { font-size: 16px; margin-bottom: 15px; color: var(--light); }
+        .indicator-chart { height: 150px; margin-bottom: 15px; position: relative; flex-grow: 1; }
+        .indicator-settings { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+        .indicator-select { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 12px; color: var(--light); font-size: 12px; }
+        .sentiment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .sentiment-card { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; display: flex; flex-direction: column; }
+        .sentiment-card:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-3px); }
+        .sentiment-card h3 { font-size: 16px; margin-bottom: 15px; color: var(--light); }
+        .sentiment-score { font-size: 24px; font-weight: 600; margin-bottom: 15px; text-align: center; color: var(--light); }
+        .sentiment-score span { font-size: 14px; padding: 3px 10px; border-radius: 20px; margin-left: 10px; }
+        .sentiment-chart { height: 200px; position: relative; margin-bottom: 15px; flex-grow: 1; }
+        .source-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .source-bar { display: flex; align-items: center; gap: 10px; }
+        .source-bar span { width: 70px; font-size: 12px; color: rgba(255, 255, 255, 0.7); flex-shrink: 0; }
+        .progress-bar-container { flex-grow: 1; background-color: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden; height: 20px; }
+        .bar-fill { height: 100%; border-radius: 10px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 10px; font-weight: 600; color: white; min-width: 40px; transition: width 0.5s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .source-bar.reddit .bar-fill { background: #FF5700; }
+        .source-bar.telegram .bar-fill { background: #0088CC; }
+        .keywords-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .keyword { padding: 5px 10px; border-radius: 20px; font-size: 12px; }
+        .keyword.positive { background: rgba(0, 200, 83, 0.2); color: var(--success); }
+        .keyword.negative { background: rgba(255, 61, 113, 0.2); color: var(--danger); }
+        .keyword.neutral { background: rgba(58, 123, 213, 0.2); color: var(--neutral-color); }
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .news-card { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; display: flex; flex-direction: column; }
+        .news-card:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-3px); }
+        .news-card h3 { font-size: 16px; margin-bottom: 10px; color: var(--light); line-height: 1.4; flex-grow: 1; }
+        .news-source { font-size: 12px; color: var(--primary); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .news-date { font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-bottom: 10px; }
+        .news-summary { font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-bottom: 15px; line-height: 1.5; flex-grow: 2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+        .news-sentiment { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; margin-top: auto; align-self: flex-start; }
+        .news-sentiment.neutral { background: rgba(58, 123, 213, 0.2); color: var(--neutral-color); }
+        .alerts-container { display: flex; flex-direction: column; gap: 15px; max-height: 500px; overflow-y: auto; padding-right: 5px; }
+        .alerts-container::-webkit-scrollbar { width: 6px; } .alerts-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; } .alerts-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; } .alerts-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        .alert-card { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); transition: background-color 0.3s ease; display: flex; align-items: center; gap: 15px; }
+        .alert-card:hover { background: rgba(255, 255, 255, 0.08); }
+        .alert-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 50%; background: rgba(58, 123, 213, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--primary); }
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 14px; margin-bottom: 5px; color: var(--light); font-weight: 500; }
+        .alert-message { font-size: 12px; color: rgba(255, 255, 255, 0.6); line-height: 1.4; }
+        .alert-time { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 5px; }
+        .settings-form { display: flex; flex-direction: column; gap: 20px; }
+        .settings-group { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .settings-group h3 { font-size: 16px; margin-bottom: 15px; color: var(--light); }
+        .settings-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .settings-row:last-child { margin-bottom: 0; }
+        .settings-label { font-size: 14px; color: rgba(255, 255, 255, 0.8); flex-shrink: 0; }
+        .settings-control { display: flex; align-items: center; gap: 10px; }
+        .settings-control select { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 12px; color: var(--light); font-size: 14px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffffa0'%3E%3Cpath fill-rule='evenodd' d='M8 10a.75.75 0 0 1-.53-.22l-3-3a.75.75 0 1 1 1.06-1.06L8 8.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3 3A.75.75 0 0 1 8 10Z' clip-rule='evenodd' /%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; background-size: 14px 14px; padding-right: 30px; }
+        .settings-control .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .settings-control .switch input { opacity: 0; width: 0; height: 0; }
+        .settings-control .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.1); transition: .4s; border-radius: 24px; }
+        .settings-control .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .settings-control input:checked + .slider { background-color: var(--primary); }
+        .settings-control input:checked + .slider:before { transform: translateX(26px); }
+        .save-settings { background: var(--primary-gradient); color: white; border: none; border-radius: 8px; padding: 12px 20px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; align-self: flex-end; margin-top: 10px; }
+        .save-settings:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(58, 123, 213, 0.4); }
+        .profile-section { display: none; background: rgba(15, 22, 41, 0.85); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); margin-bottom: 20px; animation: fadeIn 0.5s ease-out; }
+        .profile-header { margin-bottom: 20px; }
+        .profile-header h2 { font-size: 22px; margin-bottom: 5px; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .profile-header p { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+        .profile-content { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; font-size: 40px; color: rgba(255, 255, 255, 0.7); border: 2px solid rgba(255, 255, 255, 0.2); }
+        .profile-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; width: 100%; max-width: 600px; }
+        .profile-info-item { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .profile-info-label { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 5px; }
+        .profile-info-value { font-size: 16px; font-weight: 500; color: var(--light); word-break: break-all; }
+        .profile-actions { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .profile-button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; border: none; display: inline-flex; align-items: center; gap: 8px; }
+        .profile-button.primary { background: var(--primary-gradient); color: white; }
+        .profile-button.secondary { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .profile-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        .profile-button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: var(--light); }
+        #available-sources-display { margin-top: 10px; padding: 12px 15px; background-color: rgba(255, 255, 255, 0.03); border-radius: 10px; }
+        #available-sources-display .sources-list-title { font-weight: 600; margin-bottom: 10px; color: rgba(255, 255, 255, 0.9); font-size: 14px; }
+        #available-sources-display ul.sources-list { list-style-type: none; padding-left: 0; margin: 0; }
+        #available-sources-display ul.sources-list li { padding: 8px 0; color: rgba(255, 255, 255, 0.75); font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; align-items: center; }
+        #available-sources-display ul.sources-list li:last-child { border-bottom: none; }
+        #available-sources-display ul.sources-list li i,
+        #available-sources-display ul.sources-list li svg {
+             margin-right: 8px;
+             font-size: 1.1em;
+             flex-shrink: 0;
+        }
+
+        @media (max-width: 1024px) { .login-page .container { max-width: 480px; } .horizontal-dashboard { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; height: auto; padding: 10px 20px; justify-content: space-between; } .sidebar .logo-container { margin-bottom: 0; margin-right: 20px; flex-shrink: 0; } .sidebar-menu { flex-direction: row; gap: 15px; flex-grow: 1; justify-content: flex-end; overflow-x: auto; padding-bottom: 5px; } .sidebar-menu .tooltip { display: none; } .chart-row { flex-direction: column; } .prediction-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .horizontal-stats { gap: 10px; } .stat-card { min-width: calc(50% - 10px); } .profile-info { grid-template-columns: 1fr; } .market-stats .stats-container { justify-content: space-between; } .market-stats .stat-item { flex: 1 0 calc(50% - 10px); } .sidebar { flex-wrap: wrap; justify-content: center; } .sidebar-menu { justify-content: center; width: 100%; margin-top: 10px; } }
+        @media (max-width: 480px) { .stat-card { min-width: 100%; } .top-bar { flex-direction: column; gap: 15px; align-items: stretch; padding: 15px; } .user-nav { justify-content: space-between; width: 100%; } .page-title { text-align: center; } .sidebar-menu { gap: 10px; } .sidebar-menu a { width: 45px; height: 45px; } .sidebar-menu i { font-size: 20px; } .section-header h2 { font-size: 20px; } .indicator-card, .sentiment-card, .news-card, .settings-group, .profile-section { padding: 15px; } .profile-actions { flex-direction: column; align-items: stretch; } .profile-button { justify-content: center; } .market-stats { margin-bottom: 25px; } .market-stats .stats-container { gap: 10px; } .market-stats .stat-item { flex: 1 0 100%; padding: 12px 8px; } .market-stats .stat-value { font-size: 16px; } .prediction-grid { gap: 15px; } .prediction-chart-container { height: 250px; } .chart-legend { flex-wrap: wrap; justify-content: center; gap: 10px 15px; } .settings-row { flex-direction: column; align-items: flex-start; } .settings-control { width: 100%; justify-content: space-between; } .settings-control select { flex-grow: 1; } .dropdown-menu { min-width: 150px; } }
+        @media (max-width: 767px) { .login-page { padding: 10px; align-items: flex-start; padding-top: 5vh; } .container { padding: 25px; max-width: 100%; margin-top: 0; margin-bottom: 20px; } h1 { font-size: 26px; } .subtitle { font-size: 14px; margin-bottom: 30px; } input { padding: 14px 15px 14px 45px; font-size: 14px; } button { padding: 14px; font-size: 15px; } .modal-content { padding: 20px; width: 95%; } }
+        @media (max-width: 320px) { .container { padding: 20px; } h1 { font-size: 24px; } .links { flex-direction: column; gap: 10px; align-items: center; } .stat-card { padding: 15px; } .stat-card .stat-value { font-size: 20px; } }
+        .market-trend { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="login-page" id="login-page">
+        <canvas class="background-canvas" id="market-canvas"></canvas>
+        <div class="market-trend" id="trend-container"></div>
+        <div class="container" id="main-container">
+            <div class="background-glow glow-1"></div>
+            <div class="background-glow glow-2"></div>
+            <div class="logo-container">
+                <div class="logo-wrapper">
+                    <div class="logo-bg"></div>
+                    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs><linearGradient id="bitcoinGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3a7bd5" /><stop offset="100%" stop-color="#00d2ff" /></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter></defs>
+                        <circle cx="50" cy="50" r="48" fill="#0f1629" stroke="url(#bitcoinGradient)" stroke-width="2.5" />
+                        <path d="M20 70 Q 35 65, 45 50 Q 55 35, 65 45 Q 75 55, 85 40" stroke="url(#bitcoinGradient)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#glow)" />
+                        <text x="50" y="60" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#f7931a" text-anchor="middle" filter="url(#glow)">₿</text>
+                        <circle cx="20" cy="70" r="3.5" fill="#3a7bd5" /><circle cx="45" cy="50" r="3.5" fill="#3a7bd5" /><circle cx="65" cy="45" r="3.5" fill="#3a7bd5" /><circle cx="85" cy="40" r="3.5" fill="#3a7bd5" />
+                    </svg>
+                </div>
+                <h1>BitcoinForesight</h1>
+                <p class="subtitle">Sentiment-Driven Bitcoin Forecasts</p>
+            </div>
+            <div class="market-stats">
+                <p class="stats-title">Live Market Indicators</p>
+                <div class="stats-container">
+                    <div class="stat-item"><div class="stat-value" id="btc-price">Loading...</div><div class="stat-label">BTC Price</div></div>
+                    <div class="stat-item"><div class="stat-value" id="btc-change">Loading...</div><div class="stat-label">24h Change</div></div>
+                    <div class="stat-item"><div class="stat-value" id="market-cap">Loading...</div><div class="stat-label">Market Cap</div></div>
+                    <div class="stat-item"><div class="stat-value" id="volume">Loading...</div><div class="stat-label">Volume</div></div>
+                </div>
+            </div>
+            <div class="alert" id="login-alert"></div>
+            <form id="login-form">
+                <div class="form-group"><label for="username">Username</label><div class="input-group"><input type="text" id="username" placeholder="Enter your username" required><span class="input-icon">👤</span></div></div>
+                <div class="form-group"><label for="password">Password</label><div class="input-group"><input type="password" id="password" placeholder="Enter your password" required><span class="input-icon">🔒</span></div></div>
+                <button type="submit" id="login-button">Sign In</button>
+                <div class="links"><a href="#" id="forgot-password-link">Forgot Password?</a><a href="#" id="create-account-link">Create Account</a></div>
+            </form>
+        </div>
+        <div class="modal" id="create-account-modal"><div class="modal-content"><span class="close-modal" id="close-create-account">&times;</span><h2 class="modal-title">Create Account</h2><div class="alert" id="register-alert"></div><form id="register-form"><div class="form-group"><label for="register-username">Username</label><div class="input-group"><input type="text" id="register-username" placeholder="Choose a username" required><span class="input-icon">👤</span></div></div><div class="form-group"><label for="register-email">Email</label><div class="input-group"><input type="email" id="register-email" placeholder="Your email address" required><span class="input-icon">✉️</span></div></div><div class="form-group"><label for="register-password">Password</label><div class="input-group"><input type="password" id="register-password" placeholder="Create a password" required><span class="input-icon">🔒</span></div></div><div class="form-group"><label for="register-confirm-password">Confirm Password</label><div class="input-group"><input type="password" id="register-confirm-password" placeholder="Confirm your password" required><span class="input-icon">🔒</span></div></div><button type="submit" id="register-button">Create Account</button></form></div></div>
+        <div class="modal" id="forgot-password-modal"><div class="modal-content"><span class="close-modal" id="close-forgot-password">&times;</span><h2 class="modal-title">Reset Password</h2><div class="alert" id="forgot-alert"></div><form id="forgot-password-form"><div class="form-group"><label for="forgot-email">Email</label><div class="input-group"><input type="email" id="forgot-email" placeholder="Your email address" required><span class="input-icon">✉️</span></div></div><button type="submit" id="reset-button">Send Reset Link</button></form></div></div>
+    </div>
+
+    <div class="dashboard-page" id="dashboard-page">
+        <div class="background-glow glow-1"></div>
+        <div class="background-glow glow-2"></div>
+        <canvas class="background-canvas" id="dashboard-canvas"></canvas>
+        <div class="horizontal-dashboard">
+            <div class="sidebar">
+                <div class="logo-container">
+                   <div class="logo">
+                         <div class="logo-bg"></div>
+                         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sidebarBitcoinGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3a7bd5" /><stop offset="100%" stop-color="#00d2ff" /></linearGradient></defs><circle cx="50" cy="50" r="48" fill="#0f1629" stroke="url(#sidebarBitcoinGradient)" stroke-width="2" /><path d="M20 70 Q 35 65, 45 50 Q 55 35, 65 45 Q 75 55, 85 40" stroke="url(#sidebarBitcoinGradient)" stroke-width="2" fill="none" stroke-linecap="round" /><text x="50" y="60" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#f7931a" text-anchor="middle">₿</text></svg>
+                    </div>
+                </div>
+                <ul class="sidebar-menu">
+                    <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-chart-line"></i><span class="tooltip">Dashboard</span></a></li>
+                    <li><a href="#" data-section="technical"><i class="fas fa-exchange-alt"></i><span class="tooltip">Technical Indicators</span></a></li>
+                    <li><a href="#" data-section="sentiment"><i class="fas fa-magic"></i><span class="tooltip">Sentiment Analysis</span></a></li>
+                    <li><a href="#" data-section="news"><i class="fas fa-newspaper"></i><span class="tooltip">News Analysis</span></a></li>
+                    <li><a href="#" data-section="alerts"><i class="fas fa-bell"></i><span class="tooltip">Alerts</span></a></li>
+                    <li><a href="#" data-section="settings"><i class="fas fa-cog"></i><span class="tooltip">Settings</span></a></li>
+                </ul>
+            </div>
+            <div class="main-content">
+                <div class="top-bar">
+                    <div class="page-title">BitcoinForesight</div>
+                    <div class="user-nav">
+                        <div class="notification" id="notification-icon"><i class="fas fa-bell"></i><span class="notification-badge">0</span></div>
+                        <div class="user-profile" id="user-profile"><div class="user-avatar"><i class="fas fa-user"></i></div><div class="user-name" id="dashboard-username">Analyst</div><i class="fas fa-chevron-down"></i></div>
+                        <div class="dropdown-menu" id="dropdown-menu"><a href="#" class="dropdown-item" id="profile-dropdown"><i class="fas fa-user-circle"></i> Profile</a><a href="#" class="dropdown-item" id="settings-dropdown"><i class="fas fa-cog"></i> Settings</a><a href="#" class="dropdown-item"><i class="fas fa-wallet"></i> Wallet</a><div class="dropdown-divider"></div><a href="#" class="dropdown-item" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+                    </div>
+                </div>
+                <div class="section-container" id="dashboard-section">
+                    <div class="prediction-section">
+                        <div class="prediction-header"><div class="prediction-title">Bitcoin Prediction Model</div></div>
+                        <div class="prediction-grid">
+                            <div class="prediction-controls">
+                                <div class="control-group">
+                                    <label class="control-label">Prediction Period</label>
+                                    <select class="control-select" id="prediction-period">
+                                        <option selected>5 Days</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <div id="available-sources-display">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label">Confidence Level (Illustrative)</label>
+                                    <input type="range" min="70" max="95" value="85" class="confidence-slider" id="confidence-level">
+                                    <div class="confidence-labels"><span class="confidence-label">70%</span><span class="confidence-label" id="confidence-level-display">85%</span><span class="confidence-label">95%</span></div>
+                                </div>
+                                <button class="prediction-button" id="generate-prediction"><i class="fas fa-chart-line"></i> Generate Prediction</button>
+                            </div>
+                            <div class="prediction-results">
+                                <div class="chart-container">
+                                    <div class="chart-header"><div class="chart-title">Bitcoin Price Forecast</div>
+                                    </div>
+                                    <div class="prediction-chart-container">
+                                        <canvas id="price-chart" class="chart-canvas"></canvas>
+                                        <div id="price-chart-loader" class="chart-placeholder" style="display: flex;">Click "Generate Prediction" to load chart.</div>
+                                        <div class="chart-legend"><div class="legend-item"><div class="legend-color historical-color"></div><span>Historical Data</span></div><div class="legend-item"><div class="legend-color prediction-color"></div><span>AI Prediction</span></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="forecast-container">
+                        <div class="forecast-header"><div class="forecast-title">Prediction Signals</div>
+                            <div class="chart-actions">
+                                <button class="time-filter active" data-signal-type="ALL">ALL</button>
+                                <button class="time-filter" data-signal-type="BUY">BUY</button>
+                                <button class="time-filter" data-signal-type="SELL">SELL</button>
+                                <button class="time-filter" data-signal-type="HOLD">HOLD</button>
+                            </div>
+                        </div>
+                        <div class="forecast-cards" id="forecast-cards-list"><p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;" id="forecast-cards-loader">Click "Generate Prediction" to see signals.</p></div>
+                    </div>
+                    <div class="prediction-section">
+                        <div class="prediction-header"><div class="prediction-title">Market Sentiment Analysis</div></div>
+                        <div class="prediction-grid" style="grid-template-columns: 1fr;">
+                            <div class="prediction-results">
+                               <div class="sentiment-card">
+                                   <h3>Sentiment Over Time (Last 30 Days)</h3>
+                                   <div class="sentiment-chart" id="sentiment-trend-container">
+                                       <canvas id="sentiment-trend"></canvas>
+                                       <div id="sentiment-trend-loader" class="chart-placeholder" style="display: flex;">Click "Generate Prediction" for sentiment trend.</div>
+                                   </div>
+                               </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-container" id="technical-section">
+                    <div class="section-header"><h2>Technical Indicators</h2><p>Advanced technical analysis tools for Bitcoin price prediction</p></div>
+                     <div id="technical-indicators-loader" class="chart-placeholder" style="display: flex; padding: 20px;">Click "Generate Prediction" on Dashboard for indicators.</div>
+                    <div class="indicators-grid" id="indicators-grid-content" style="display:none;">
+                        <div class="indicator-card"><h3>SMA 20</h3><div class="indicator-chart" id="sma20-chart-container"><canvas id="sma20-chart"></canvas></div><div class="indicator-settings"><span id="current-sma20">Current: --</span></div></div>
+                        <div class="indicator-card"><h3>RSI (Relative Strength Index)</h3><div class="indicator-chart" id="rsi-chart-container"><canvas id="rsi-chart"></canvas></div><div class="indicator-settings"><span id="current-rsi">Current: --</span> <label>OB: 70</label><label>OS: 30</label></div></div>
+                        <div class="indicator-card"><h3>Bollinger Bands</h3><div class="indicator-chart" id="bb-chart-container"><canvas id="bb-chart"></canvas></div><div class="indicator-settings"><span id="current-bollinger-upper">Upper: --</span> <span id="current-bollinger-lower">Lower: --</span></div></div>
+                        <div class="indicator-card"><h3>Volatility</h3><div class="indicator-chart" id="volatility-chart-container"><canvas id="volatility-chart"></canvas></div><div class="indicator-settings"><span id="current-volatility">Current: --</span></div></div>
+                    </div>
+                </div>
+                <div class="section-container" id="sentiment-section">
+                    <div class="section-header"><h2>Market Sentiment Analysis (Detailed)</h2><p>Real-time sentiment data from social media and news sources</p></div>
+                    <div id="detailed-sentiment-loader" class="chart-placeholder" style="display: flex; padding: 20px;">Loading detailed sentiment data...</div>
+                    <div class="sentiment-grid" id="detailed-sentiment-content" style="display:none;">
+                        <div class="sentiment-card"><h3>Overall Sentiment</h3><div class="sentiment-score" id="detailed-sentiment-overall-score">--% <span id="detailed-sentiment-overall-text" class="neutral">Neutral</span></div><div class="sentiment-chart" id="sentiment-donut-container"><canvas id="sentiment-donut-chart"></canvas></div></div>
+                        <div class="sentiment-card"><h3>Source Breakdown</h3><div class="source-bars" id="detailed-source-bars">
+                            <div class="source-bar reddit"><span>Reddit</span><div class="progress-bar-container"><div class="bar-fill" style="width: 0%; background-color: #FF5700;">0%</div></div></div>
+                            <div class="source-bar telegram"><span>Telegram</span><div class="progress-bar-container"><div class="bar-fill" style="width: 0%; background-color: #0088CC;">0%</div></div></div>
+                        </div></div>
+                        <div class="sentiment-card"><h3>Sentiment Over Time</h3><div class="sentiment-chart" id="sentiment-trend-section-container"><canvas id="sentiment-trend-section"></canvas></div></div>
+                        <div class="sentiment-card"><h3>Top Keywords (Illustrative)</h3><div class="keywords-cloud" id="detailed-keywords-cloud"><span class="keyword positive">Bullish</span><span class="keyword positive">Rally</span><span class="keyword negative">Correction</span><span class="keyword positive">ATH</span><span class="keyword neutral">Consolidation</span><span class="keyword negative">Bearish</span><span class="keyword positive">Buy</span><span class="keyword negative">Sell</span></div></div>
+                    </div>
+                </div>
+                <div class="section-container" id="news-section">
+                    <div class="section-header"><h2>News Analysis</h2><p>Latest Telegram messages with sentiment analysis</p></div>
+                    <div class="news-grid" id="news-grid-container"><div id="news-loading" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5); grid-column: 1 / -1;">Loading news... <span class="spinner" style="width: 16px; height: 16px; border-width: 2px; vertical-align: middle;"></span></div></div>
+                </div>
+                <div class="section-container" id="alerts-section">
+                    <div class="section-header"><h2>Price Alerts</h2><p>Your personalized Bitcoin price alerts</p></div>
+                    <div class="alerts-container" id="alerts-list-container"><div class="alert-card"><div class="alert-icon"><i class="fas fa-info-circle"></i></div><div class="alert-content"><div class="alert-title">Welcome</div><div class="alert-message">Price change alerts since login will appear here.</div><div class="alert-time">Just now</div></div></div></div>
+                </div>
+                <div class="section-container" id="settings-section">
+                    <div class="section-header"><h2>Settings</h2><p>Customize your BitcoinForesight experience</p></div>
+                    <form class="settings-form">
+                        <div class="settings-group"><h3>Notification Preferences</h3><div class="settings-row"><div class="settings-label">Email Notifications</div><div class="settings-control"><label class="switch"> <input type="checkbox" checked> <span class="slider"></span> </label></div></div><div class="settings-row"><div class="settings-label">Push Notifications</div><div class="settings-control"><label class="switch"> <input type="checkbox" checked> <span class="slider"></span> </label></div></div><div class="settings-row"><div class="settings-label">SMS Alerts</div><div class="settings-control"><label class="switch"> <input type="checkbox"> <span class="slider"></span> </label></div></div></div>
+                        <div class="settings-group"><h3>Alert Preferences</h3><div class="settings-row"><div class="settings-label">Price Alerts</div><div class="settings-control"><select><option>All price movements</option><option selected>Significant movements only</option><option>Custom thresholds</option></select></div></div><div class="settings-row"><div class="settings-label">Technical Alerts</div><div class="settings-control"><select><option>All indicators</option><option selected>Major signals only</option><option>Custom selection</option></select></div></div><div class="settings-row"><div class="settings-label">News Sentiment Alerts</div><div class="settings-control"><select><option selected>Significant changes</option><option>All sentiment shifts</option><option>Custom thresholds</option></select></div></div></div>
+                        <div class="settings-group"><h3>Display Preferences</h3><div class="settings-row"><div class="settings-label">Theme</div><div class="settings-control"><select><option selected>Dark</option><option>Light</option><option>System Default</option></select></div></div><div class="settings-row"><div class="settings-label">Price Display</div><div class="settings-control"><select><option selected>USD</option><option>EUR</option><option>BTC</option><option>Custom</option></select></div></div><div class="settings-row"><div class="settings-label">Chart Style</div><div class="settings-control"><select><option selected>Candlestick</option><option>Line</option><option>Area</option><option>Heikin-Ashi</option></select></div></div></div>
+                        <button type="submit" class="save-settings">Save Settings</button>
+                    </form>
+                </div>
+                <div class="profile-section" id="profile-section">
+                    <div class="profile-header"><h2>User Profile</h2><p>Manage your account information and preferences</p></div>
+                    <div class="profile-content">
+                        <div class="profile-avatar"> <i class="fas fa-user"></i> </div>
+                        <div class="profile-info">
+                            <div class="profile-info-item"><div class="profile-info-label">Username</div><div class="profile-info-value" id="profile-username">Loading...</div></div>
+                            <div class="profile-info-item"><div class="profile-info-label">Email</div><div class="profile-info-value" id="profile-email">Loading...</div></div>
+                            <div class="profile-info-item"><div class="profile-info-label">Account Type</div><div class="profile-info-value">Premium</div></div>
+                            <div class="profile-info-item"><div class="profile-info-label">Member Since</div><div class="profile-info-value" id="profile-created">Loading...</div></div>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="profile-button primary" id="change-password-btn"> <i class="fas fa-key"></i> Change Password </button>
+                            <button class="profile-button secondary" id="edit-profile-btn"> <i class="fas fa-edit"></i> Edit Profile </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="welcome-modal">
+        <div class="modal-content welcome-modal-content">
+            <span class="close-modal" id="close-welcome-modal">&times;</span>
+            <div class="welcome-modal-header">
+                <i class="fas fa-rocket welcome-modal-icon"></i>
+                <h2 id="welcome-modal-title">Welcome!</h2>
+            </div>
+            <p id="welcome-modal-message" class="welcome-modal-text">
+            </p>
+            <button id="welcome-modal-ok-btn" class="prediction-button">Get Started</button>
+        </div>
+    </div>
+
+    <script>
+        let globalSentimentData = {
+            all: { positive: 0.0, negative: 0.0, neutral: 100.0, score: 50, label: 'Neutral' },
+            telegram: null,
+            reddit: null
+        };
+
+        function normalizeJsSentimentRatios(p, n, u) {
+            let p_val = parseFloat(p) || 0.0;
+            let n_val = parseFloat(n) || 0.0;
+            let u_val = parseFloat(u) || 0.0;
+            let total = p_val + n_val + u_val;
+
+            if (total === 0) {
+                return { positive: 0.0, negative: 0.0, neutral: 100.0 };
+            }
+
+            let p_norm = (p_val / total) * 100;
+            let n_norm = (n_val / total) * 100;
+            let u_norm = (u_val / total) * 100;
+
+            let currentSum = p_norm + n_norm + u_norm;
+            if (Math.abs(currentSum - 100.0) > 0.01) {
+                let diff = 100.0 - currentSum;
+                if (u_norm >= p_norm && u_norm >= n_norm && Math.abs(diff) > 1e-5 ) u_norm += diff;
+                else if (p_norm >= u_norm && p_norm >= n_norm && Math.abs(diff) > 1e-5) p_norm += diff;
+                else if (Math.abs(diff) > 1e-5) n_norm += diff;
+            }
+
+            p_norm = Math.max(0, p_norm);
+            n_norm = Math.max(0, n_norm);
+            u_norm = Math.max(0, u_norm);
+
+            let finalTotalCheck = p_norm + n_norm + u_norm;
+            if (Math.abs(finalTotalCheck - 100.0) > 0.01 && finalTotalCheck > 0) {
+                const remainingDiff = 100.0 - finalTotalCheck;
+                if (u_norm >= p_norm && u_norm >= n_norm) u_norm += remainingDiff;
+                else if (p_norm >= u_norm && p_norm >= n_norm) p_norm += remainingDiff;
+                else n_norm += remainingDiff;
+
+                p_norm = Math.max(0,p_norm);
+                n_norm = Math.max(0,n_norm);
+                u_norm = 100.0 - p_norm - n_norm;
+                u_norm = Math.max(0,u_norm);
+
+                 if (u_norm === 0 && Math.abs(p_norm + n_norm - 100.0) > 0.01 && (p_norm + n_norm > 0) ) {
+                    const scale = 100.0 / (p_norm + n_norm);
+                    p_norm *= scale;
+                    n_norm *= scale;
+                 }
+
+            } else if (finalTotalCheck === 0) {
+                 p_norm = 0.0; n_norm = 0.0; u_norm = 100.0;
+            }
+            p_norm = parseFloat(p_norm.toFixed(1));
+            n_norm = parseFloat(n_norm.toFixed(1));
+            u_norm = parseFloat((100.0 - p_norm - n_norm).toFixed(1));
+
+            if (Math.abs(p_norm + n_norm + u_norm - 100.0) > 0.05 && u_norm > 0.05) {
+                u_norm = 100.0 - p_norm - n_norm;
+            } else if (Math.abs(p_norm + n_norm + u_norm - 100.0) > 0.05 && p_norm > 0.05) {
+                 p_norm = 100.0 - n_norm - u_norm;
+            } else if (Math.abs(p_norm + n_norm + u_norm - 100.0) > 0.05 && n_norm > 0.05) {
+                n_norm = 100.0 - p_norm - u_norm;
+            }
+             u_norm = Math.max(0, parseFloat(u_norm.toFixed(1)));
+
+
+            return {
+                positive: p_norm,
+                negative: n_norm,
+                neutral: u_norm
+            };
+        }
+
+        class AuthSystem {
+            constructor() {
+                this.users = JSON.parse(localStorage.getItem('bitcoinForesightUsers')) || [];
+                this.currentUser = JSON.parse(localStorage.getItem('bitcoinForesightCurrentUser')) || null;
+            }
+            register(username, email, password) {
+                const existingUser = this.users.find(user => user.username === username || user.email === email);
+                if (existingUser) { return { success: false, message: 'Username or email already exists' }; }
+                const newUser = { id: Date.now().toString(), username, email, password: this._hashPassword(password), createdAt: new Date().toISOString(), lastLogin: null };
+                this.users.push(newUser); this._saveUsers(); return { success: true, user: newUser };
+            }
+            login(username, password) {
+                const user = this.users.find(u => u.username === username);
+                if (!user || user.password !== this._hashPassword(password)) { return { success: false, message: 'Invalid username or password' }; }
+                user.lastLogin = new Date().toISOString(); this._saveUsers(); this.currentUser = user;
+                localStorage.setItem('bitcoinForesightCurrentUser', JSON.stringify(user));
+                const priceElement = document.getElementById('btc-price');
+                if (priceElement && priceElement.textContent !== 'Loading...' && !priceElement.textContent.includes('N/A')) {
+                    try { const priceString = priceElement.textContent.replace(/[$,\s]+/g, ""); loginTimePrice = parseFloat(priceString); if (isNaN(loginTimePrice)) loginTimePrice = null; else console.log("Login time price captured:", loginTimePrice); } catch (e) { loginTimePrice = null; console.error("Price parse error", e); }
+                } else { loginTimePrice = null; }
+                showWelcomePopupAndNotification(user.username);
+                showDashboard();
+                checkPriceChangeOnLogin();
+                return { success: true, user };
+            }
+            logout() { this.currentUser = null; localStorage.removeItem('bitcoinForesightCurrentUser'); loginTimePrice = null; showLoginPage(); }
+            requestPasswordReset(email) { const user = this.users.find(u => u.email === email); if (!user) return { success: false, message: 'Email not found' }; console.log(`Simulating password reset for ${email}`); return { success: true, message: 'Password reset link sent (simulated)'}; }
+            _hashPassword(password) { try { return btoa(unescape(encodeURIComponent(password + '_salt'))); } catch (e) { console.error("Hashing error:", e); return password; } }
+            _saveUsers() { localStorage.setItem('bitcoinForesightUsers', JSON.stringify(this.users)); }
+        }
+        const auth = new AuthSystem();
+
+        function showWelcomePopupAndNotification(username) {
+            const welcomeTitleText = `Welcome, ${username}!`;
+            const welcomeMessageText = "You're now logged into BitcoinForesight. Explore AI-driven predictions, analyze market sentiment, and stay ahead with the latest crypto insights.";
+            const notificationIconClass = 'fas fa-rocket';
+            const welcomeModalElement = document.getElementById('welcome-modal');
+            const welcomeModalTitle = document.getElementById('welcome-modal-title');
+            const welcomeModalMessage = document.getElementById('welcome-modal-message');
+            if (welcomeModalElement && welcomeModalTitle && welcomeModalMessage) {
+                welcomeModalTitle.textContent = welcomeTitleText;
+                welcomeModalMessage.textContent = welcomeMessageText;
+                showModal(welcomeModalElement);
+            } else { console.error("Welcome modal elements not found!"); }
+            const notificationTitle = `Welcome to BitcoinForesight, ${username}!`;
+            const notificationMessage = "Explore predictions, sentiment, and news.";
+            addNotification(notificationTitle, notificationMessage, notificationIconClass);
+        }
+
+        function displayAvailableDataSources() {
+            const sourcesDisplayDiv = document.getElementById('available-sources-display');
+            if (!sourcesDisplayDiv) return;
+            sourcesDisplayDiv.innerHTML = '';
+            const titleElement = document.createElement('p');
+            titleElement.textContent = 'Active Data Sources:';
+            titleElement.className = 'sources-list-title';
+            sourcesDisplayDiv.appendChild(titleElement);
+            const sourcesListElement = document.createElement('ul');
+            sourcesListElement.className = 'sources-list';
+            const availableSources = [
+                { name: "Telegram", logoClass: "fab fa-telegram-plane", color: "#0088CC" },
+                { name: "Reddit", logoClass: "fab fa-reddit-alien", color: "#FF5700" },
+                { name: "CoinGecko", logoHTML: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align: -0.125em;font-size:1.1em;"><circle cx="12" cy="12" r="10" fill="#8DC63F"/><text x="12" y="17" font-family="Verdana, sans-serif" font-size="13px" font-weight="bold" fill="white" text-anchor="middle">G</text></svg>` }
+            ];
+            if (availableSources.length > 0) {
+                availableSources.forEach(source => {
+                    const listItem = document.createElement('li');
+                    let logoHtmlContent = '';
+                    if (source.logoClass) logoHtmlContent = `<i class="${source.logoClass}" style="color: ${source.color || 'inherit'};"></i>`;
+                    else if (source.logoHTML) logoHtmlContent = source.logoHTML;
+                    listItem.innerHTML = `${logoHtmlContent}<span>${source.name}</span>`;
+                    sourcesListElement.appendChild(listItem);
+                });
+            } else {
+                const noSourcesItem = document.createElement('li');
+                noSourcesItem.textContent = 'No data sources active.';
+                sourcesListElement.appendChild(noSourcesItem);
+            }
+            sourcesDisplayDiv.appendChild(sourcesListElement);
+        }
+
+        let loginTimePrice = null; let notificationCount = 0;
+        let priceChart = null, sentimentChart = null, sentimentTrendChart = null;
+        let sma20Chart = null, rsiChart = null, bbChart = null, volatilityChart = null;
+        let sentimentDonutSectionChart = null, sentimentTrendSectionChart = null;
+        let animationFrameIdLogin = null, animationFrameIdDashboard = null;
+        const loginForm = document.getElementById('login-form'); const registerForm = document.getElementById('register-form'); const forgotPasswordForm = document.getElementById('forgot-password-form');
+        const loginButton = document.getElementById('login-button'); const registerButton = document.getElementById('register-button'); const resetButton = document.getElementById('reset-button');
+        const createAccountLink = document.getElementById('create-account-link'); const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const createAccountModal = document.getElementById('create-account-modal'); const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const closeCreateAccount = document.getElementById('close-create-account'); const closeForgotPassword = document.getElementById('close-forgot-password');
+        const loginAlert = document.getElementById('login-alert'); const registerAlert = document.getElementById('register-alert'); const forgotAlert = document.getElementById('forgot-alert');
+        const logoutBtn = document.getElementById('logout-btn'); const loginPage = document.getElementById('login-page'); const dashboardPage = document.getElementById('dashboard-page');
+        const dashboardUsername = document.getElementById('dashboard-username'); const profileDropdown = document.getElementById('profile-dropdown'); const settingsDropdown = document.getElementById('settings-dropdown');
+        const notificationBadge = document.querySelector('.notification-badge'); const alertsListContainer = document.getElementById('alerts-list-container');
+        const userProfileToggle = document.getElementById('user-profile'); const dropdownMenu = document.getElementById('dropdown-menu'); const notificationIcon = document.getElementById('notification-icon');
+        const loginCanvas = document.getElementById('market-canvas'); const loginCtx = loginCanvas?.getContext('2d');
+        const dashboardCanvas = document.getElementById('dashboard-canvas'); const dashboardCtx = dashboardCanvas?.getContext('2d'); const trendContainer = document.getElementById('trend-container');
+        const confidenceLevelSlider = document.getElementById('confidence-level');
+        const confidenceLevelDisplay = document.getElementById('confidence-level-display');
+
+        if (confidenceLevelSlider && confidenceLevelDisplay) {
+            confidenceLevelSlider.addEventListener('input', function() {
+                confidenceLevelDisplay.textContent = this.value + '%';
+            });
+        }
+
+        function showLoginPage() { loginPage.style.display = 'flex'; dashboardPage.style.display = 'none'; startStopAnimations(); fetchBitcoinData(); }
+        async function showDashboard() {
+            loginPage.style.display = 'none';
+            dashboardPage.style.display = 'block';
+            updateDashboardUserInfo();
+            initDashboardCharts();
+            setupDashboardEventListeners();
+            showSection('dashboard-section');
+            startStopAnimations();
+            updateNotificationBadge();
+            document.getElementById('price-chart-loader').style.display = 'flex';
+            document.getElementById('price-chart-loader').textContent = 'Click "Generate Prediction" to load chart.';
+            document.getElementById('forecast-cards-loader').textContent = 'Click "Generate Prediction" to see signals.';
+            document.getElementById('forecast-cards-loader').style.display = 'block';
+            document.getElementById('sentiment-trend-loader').style.display = 'flex';
+            document.getElementById('sentiment-trend-loader').textContent = 'Click "Generate Prediction" for sentiment trend.';
+            const techIndicatorsLoader = document.getElementById('technical-indicators-loader');
+            const techIndicatorsGrid = document.getElementById('indicators-grid-content');
+            if (techIndicatorsLoader) techIndicatorsLoader.style.display = 'flex';
+            if (techIndicatorsLoader) techIndicatorsLoader.textContent = 'Click "Generate Prediction" on Dashboard for indicators.';
+            if (techIndicatorsGrid) techIndicatorsGrid.style.display = 'none';
+        }
+        async function showSection(sectionId) {
+            document.querySelectorAll('.section-container, .profile-section').forEach(s => s.style.display = 'none');
+            const section = document.getElementById(sectionId);
+            let activeSectionName = 'dashboard';
+            if (section) {
+                section.style.display = 'block';
+                activeSectionName = sectionId.replace('-section', '');
+                if (sectionId === 'news-section') await fetchAndDisplayNewsForNewsSection();
+                else if (sectionId === 'sentiment-section') await fetchAndDisplayDetailedSentiment();
+                else if (sectionId === 'technical-section') {
+                    const indicatorsGrid = document.getElementById('indicators-grid-content');
+                    const techLoader = document.getElementById('technical-indicators-loader');
+                    if (indicatorsGrid && (!sma20Chart || !sma20Chart.data || sma20Chart.data.datasets[0].data.length === 0)) {
+                        if(techLoader) techLoader.style.display = 'flex';
+                        if(indicatorsGrid) indicatorsGrid.style.display = 'none';
+                    } else if (indicatorsGrid) {
+                         if(techLoader) techLoader.style.display = 'none';
+                         if(indicatorsGrid) indicatorsGrid.style.display = 'grid';
+                    }
+                } else if (sectionId === 'dashboard-section') {
+                    const priceChartLoader = document.getElementById('price-chart-loader');
+                    if (priceChart && priceChart.data && priceChart.data.labels && priceChart.data.labels.length > 0 &&
+                        ((priceChart.data.datasets[0] && priceChart.data.datasets[0].data.some(d => d !== null)) ||
+                         (priceChart.data.datasets[1] && priceChart.data.datasets[1].data.some(d => d !== null))) ) {
+                        if(priceChartLoader) priceChartLoader.style.display = 'none';
+                    } else if (priceChartLoader) {
+                        priceChartLoader.style.display = 'flex';
+                        priceChartLoader.textContent = 'Click "Generate Prediction" to load chart.';
+                    }
+                }
+            } else {
+                const defaultSection = document.getElementById('dashboard-section');
+                if (defaultSection) defaultSection.style.display = 'block';
+                console.warn(`Section ${sectionId} not found, showing dashboard.`);
+            }
+            document.querySelectorAll('.sidebar-menu a').forEach(item => {
+                item.classList.toggle('active', item.getAttribute('data-section') === activeSectionName);
+            });
+            const menuItem = document.querySelector(`.sidebar-menu a[data-section="${activeSectionName}"]`);
+            const pageTitleEl = document.querySelector('.page-title');
+            if (pageTitleEl) {
+                pageTitleEl.textContent = menuItem?.querySelector('.tooltip')?.textContent || activeSectionName.charAt(0).toUpperCase() + activeSectionName.slice(1) || 'Dashboard';
+            }
+        }
+        function updateDashboardUserInfo() { if (auth.currentUser) { dashboardUsername.textContent = auth.currentUser.username; const profileUsernameEl = document.getElementById('profile-username'); const profileEmailEl = document.getElementById('profile-email'); const profileCreatedEl = document.getElementById('profile-created'); if (profileUsernameEl) profileUsernameEl.textContent = auth.currentUser.username; if (profileEmailEl) profileEmailEl.textContent = auth.currentUser.email; if (profileCreatedEl) profileCreatedEl.textContent = new Date(auth.currentUser.createdAt).toLocaleDateString(); } }
+        function checkAuth() { if (auth.currentUser) { showDashboard(); } else { showLoginPage(); } }
+        function showModal(modal) { if(modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden';} }
+        function hideModal(modal) { if(modal) { modal.style.display = 'none'; document.body.style.overflow = 'auto';} }
+        function showAlert(element, message, type = 'error') { if (!element) return; element.textContent = message; element.className = `alert alert-${type}`; element.style.display = 'block'; element.style.opacity = '1'; element.style.transition = ''; clearTimeout(element.alertTimeout); element.alertTimeout = setTimeout(() => { element.style.transition = 'opacity 0.5s ease'; element.style.opacity = '0'; setTimeout(() => { element.style.display = 'none'; }, 500); }, 5000); }
+        function updateNotificationBadge() { if (!notificationBadge) return; notificationBadge.textContent = notificationCount > 9 ? '9+' : notificationCount; notificationBadge.style.display = notificationCount > 0 ? 'flex' : 'none'; }
+        function addNotification(title, message, iconClass = 'fas fa-bell') {
+            notificationCount++; updateNotificationBadge();
+            if (notificationBadge && notificationBadge.style.display !== 'none') { notificationBadge.style.transition = 'transform 0.2s ease-out'; notificationBadge.style.transform = 'scale(1.3)'; setTimeout(() => { if(notificationBadge) notificationBadge.style.transform = 'scale(1)'; }, 200); }
+            if (alertsListContainer) { const alertCard = document.createElement('div'); alertCard.className = 'alert-card'; const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const iconColor = iconClass.includes('up') ? 'var(--success)' : iconClass.includes('down') ? 'var(--danger)' : (iconClass === 'fas fa-rocket' ? 'var(--primary)' : 'var(--primary)'); const iconBg = iconClass.includes('up') ? 'rgba(0, 200, 83, 0.2)' : iconClass.includes('down') ? 'rgba(255, 61, 113, 0.2)' : (iconClass === 'fas fa-rocket' ? 'rgba(58, 123, 213, 0.2)' : 'rgba(58, 123, 213, 0.2)');
+                alertCard.innerHTML = `<div class="alert-icon" style="color: ${iconColor}; background-color: ${iconBg};"><i class="${iconClass}"></i></div><div class="alert-content"><div class="alert-title">${title}</div><div class="alert-message">${message}</div><div class="alert-time">${timeString}</div></div>`;
+                if(alertsListContainer.firstChild?.textContent?.includes("Welcome")) alertsListContainer.innerHTML = '';
+                alertsListContainer.insertBefore(alertCard, alertsListContainer.firstChild); const maxAlerts = 20; while (alertsListContainer.children.length > maxAlerts) { alertsListContainer.removeChild(alertsListContainer.lastChild); }
+            } console.log(`Notification: ${title} - ${message}`);
+        }
+        async function checkPriceChangeOnLogin() { if (loginTimePrice === null || loginTimePrice <= 0) { console.log("Skipping price check: No valid login price."); return; } const capturedLoginPrice = loginTimePrice; loginTimePrice = null; console.log("Checking price change against login price:", capturedLoginPrice); try { const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false'); if (!response.ok) throw new Error(`API error! status: ${response.status}`); const data = await response.json(); const currentPrice = data?.market_data?.current_price?.usd; if (typeof currentPrice !== 'number') throw new Error("Invalid current price from API."); console.log("Current price for comparison:", currentPrice); const priceChange = currentPrice - capturedLoginPrice; const percentageChange = (priceChange / capturedLoginPrice) * 100; const threshold = 2.5; let alertTitle = null, alertMessage = null, alertIcon = 'fas fa-dollar-sign'; if (percentageChange > threshold) { alertTitle = "Price Increase Alert"; alertMessage = `Bitcoin is up ${percentageChange.toFixed(1)}% (now $${currentPrice.toLocaleString()}) since login ($${capturedLoginPrice.toLocaleString()}).`; alertIcon = 'fas fa-arrow-trend-up'; } else if (percentageChange < -threshold) { alertTitle = "Price Decrease Alert"; alertMessage = `Bitcoin is down ${Math.abs(percentageChange).toFixed(1)}% (now $${currentPrice.toLocaleString()}) since login ($${capturedLoginPrice.toLocaleString()}).`; alertIcon = 'fas fa-arrow-trend-down'; } if (alertTitle) { console.log("Adding login price change notification:", alertTitle); addNotification(alertTitle, alertMessage, alertIcon); } else { console.log("Price change since login within threshold."); } } catch (error) { console.error('Error checking price change on login:', error); } }
+        let fetchTimeoutId = null;
+        async function fetchBitcoinData() { const btcPriceEl = document.getElementById('btc-price'); if (!btcPriceEl || loginPage.style.display === 'none') { clearTimeout(fetchTimeoutId); return; } clearTimeout(fetchTimeoutId); try { const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false'); if (!response.ok) { if (response.status === 429) { console.warn("Rate limited. Retrying in 90s."); updateMarketData(null, null, null, null, true); fetchTimeoutId = setTimeout(fetchBitcoinData, 90000); } else { throw new Error(`HTTP error! status: ${response.status}`); } return; } const data = await response.json(); const price = data?.market_data?.current_price?.usd; const change24h = data?.market_data?.price_change_percentage_24h; const marketCap = data?.market_data?.market_cap?.usd; const volume = data?.market_data?.total_volume?.usd; updateMarketData(price, change24h, marketCap, volume); fetchTimeoutId = setTimeout(fetchBitcoinData, 60000); } catch (error) { console.error('Error fetching Bitcoin data:', error); updateMarketData(null, null, null, null, true); fetchTimeoutId = setTimeout(fetchBitcoinData, 90000); } }
+        function updateMarketData(price, change24h, marketCap, volume, isError = false) { const btcPrice = document.getElementById('btc-price'); const btcChange = document.getElementById('btc-change'); const marketCapElement = document.getElementById('market-cap'); const volumeElement = document.getElementById('volume'); if (!btcPrice || !btcChange || !marketCapElement || !volumeElement) return; const naText = 'N/A'; const formatOptions = (notation = 'standard', digits = 2) => ({ style: 'currency', currency: 'USD', minimumFractionDigits: digits, maximumFractionDigits: digits, notation: notation }); if (isError || price === null || price === undefined) { [btcPrice, btcChange, marketCapElement, volumeElement].forEach(el => el.textContent = naText); if(btcChange) btcChange.className = 'stat-value'; return; } const formatCompact = (value) => new Intl.NumberFormat('en-US', formatOptions('compact', 1)).format(value); const formatStandard = (value) => new Intl.NumberFormat('en-US', formatOptions('standard', 2)).format(value); btcPrice.textContent = formatStandard(price); marketCapElement.textContent = formatCompact(marketCap); volumeElement.textContent = formatCompact(volume); const changeValue = parseFloat(change24h?.toFixed(2) || '0'); btcChange.textContent = `${changeValue >= 0 ? '+' : ''}${changeValue.toFixed(2)}% ${changeValue >= 0 ? '↑' : '↓'}`; btcChange.className = `stat-value ${changeValue >= 0 ? 'up' : 'down'}`; }
+        async function fetchAndDisplayNewsForNewsSection() {
+            const newsGrid = document.getElementById('news-grid-container');
+            const loadingIndicator = document.getElementById('news-loading');
+            if (!newsGrid || !loadingIndicator) return;
+            loadingIndicator.style.display = 'block'; newsGrid.innerHTML = ''; newsGrid.appendChild(loadingIndicator);
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/news');
+                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || `HTTP error! status: ${response.status}`);}
+                const newsItems = await response.json();
+                displayNews(newsItems, newsGrid, loadingIndicator);
+            } catch (error) { console.error('Error fetching news for news section:', error); loadingIndicator.style.display = 'none'; newsGrid.innerHTML = `<p style="text-align:center;color:var(--danger);padding:20px;grid-column:1/-1;">Error: ${error.message}</p>`;}
+        }
+        function displayNews(newsItems, newsGridContainer, loadingIndicatorElement) {
+            if (!newsGridContainer) { console.error('News grid container not found for displayNews!'); return; }
+            if (loadingIndicatorElement) loadingIndicatorElement.style.display = 'none';
+            if (!newsGridContainer.querySelector('p[style*="color: var(--danger)"]')) newsGridContainer.innerHTML = '';
+            if (!newsItems || newsItems.length === 0) {
+                if (!newsGridContainer.querySelector('p')) newsGridContainer.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,0.5);padding:20px;grid-column:1/-1;">No recent news.</p>';
+                return;
+            }
+            newsItems.forEach(item => {
+                const newsCard = document.createElement('div'); newsCard.className = 'news-card';
+                let sentimentClass = 'neutral';
+                if (item.sentiment) {
+                    const sentimentLower = item.sentiment.toLowerCase();
+                    if (sentimentLower === 'positive' || sentimentLower === 'bullish') sentimentClass = 'bullish';
+                    else if (sentimentLower === 'negative' || sentimentLower === 'bearish') sentimentClass = 'bearish';
+                }
+                const date = new Date(item.date);
+                const formattedDate = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                const timeAgo = formatTimeAgo(date);
+                const title = item.text.length > 80 ? item.text.substring(0, 80) + '...' : item.text;
+                const summary = item.text;
+                newsCard.innerHTML = `
+                    <div class="news-source"><i class="${item.source === 'Reddit' ? 'fab fa-reddit-alien' : 'fab fa-telegram-plane'}"></i> ${item.group || item.group_or_subreddit || item.source}</div>
+                    <div class="news-date">${timeAgo} (${formattedDate})</div>
+                    <h3>${title}</h3>
+                    <div class="news-summary">${summary}</div>
+                    <span class="news-sentiment ${sentimentClass}">${item.sentiment || 'Neutral'}</span>`;
+                newsGridContainer.appendChild(newsCard);
+            });
+        }
+        function formatTimeAgo(date) { if (!(date instanceof Date) || isNaN(date)) return "Invalid date"; const now = new Date(); const seconds = Math.floor((now - date) / 1000); if (seconds < 5) return "just now"; if (seconds < 60) return seconds + "s ago"; const minutes = Math.floor(seconds / 60); if (minutes < 60) return minutes === 1 ? "1m ago" : minutes + "m ago"; const hours = Math.floor(minutes / 60); if (hours < 24) return hours === 1 ? "1h ago" : hours + "h ago"; const days = Math.floor(hours / 24); if (days < 7) return days === 1 ? "1d ago" : days + "d ago"; const weeks = Math.floor(days / 7); if (weeks < 4) return weeks === 1 ? "1w ago" : weeks + "w ago"; const months = Math.floor(days / 30); if (months < 12) return months === 1 ? "1mo ago" : months + "mo ago"; const years = Math.floor(days / 365); return years === 1 ? "1y ago" : years + "y ago"; }
+        function initDashboardCharts() {
+            [priceChart, sentimentChart, sentimentTrendChart, sma20Chart, rsiChart, bbChart, volatilityChart, sentimentDonutSectionChart, sentimentTrendSectionChart].forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            priceChart=sentimentChart=sentimentTrendChart=sma20Chart=rsiChart=bbChart=volatilityChart=sentimentDonutSectionChart=sentimentTrendSectionChart=null;
+            document.querySelectorAll('.signal-marker').forEach(marker => marker.remove());
+            initPriceChart();
+            initSentimentChart();
+            initSentimentTrendChart();
+            initTechnicalIndicatorCharts();
+            initSentimentSectionCharts();
+            displayAvailableDataSources();
+        }
+        function setupDashboardEventListeners() {
+            if (userProfileToggle && dropdownMenu && !userProfileToggle.hasAttribute('data-dropdown-listener')) { userProfileToggle.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('show'); }); userProfileToggle.setAttribute('data-dropdown-listener', 'true'); document.addEventListener('click', (e) => { if (!userProfileToggle.contains(e.target) && !dropdownMenu.contains(e.target)) dropdownMenu.classList.remove('show'); }); }
+            document.querySelectorAll('.sidebar-menu a').forEach(link => { if (!link.hasAttribute('data-nav-listener')) { link.addEventListener('click', function(e) { e.preventDefault(); const sectionId = this.getAttribute('data-section') + '-section'; showSection(sectionId); }); link.setAttribute('data-nav-listener', 'true'); } });
+            if (notificationIcon && !notificationIcon.hasAttribute('data-listener-added')) { notificationIcon.addEventListener('click', () => { showSection('alerts-section'); notificationCount = 0; updateNotificationBadge(); }); notificationIcon.setAttribute('data-listener-added', 'true'); }
+            if(profileDropdown && !profileDropdown.hasAttribute('data-listener-added')) { profileDropdown.addEventListener('click', (e) => { e.preventDefault(); showSection('profile-section'); dropdownMenu.classList.remove('show'); }); profileDropdown.setAttribute('data-listener-added', 'true'); }
+            if(settingsDropdown && !settingsDropdown.hasAttribute('data-listener-added')) {
+settingsDropdown.addEventListener('click', (e) => { e.preventDefault(); showSection('settings-section');
+ dropdownMenu.classList.remove('show'); }); settingsDropdown.setAttribute('data-listener-added', 'true'); }
+            if(logoutBtn && !logoutBtn.hasAttribute('data-listener-added')) { logoutBtn.addEventListener('click', (e) => { e.preventDefault(); auth.logout(); });
+logoutBtn.setAttribute('data-listener-added', 'true'); }
+            document.querySelectorAll('.forecast-container .time-filter').forEach(button => {
+                if (!button.hasAttribute('data-signal-listener')) {
+                    button.addEventListener('click', function() {
+                        const header = this.closest('.forecast-header');
+                        if(header) header.querySelectorAll('.time-filter').forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                        filterSignals(this.dataset.signalType);
+                    });
+                    button.setAttribute('data-signal-listener', 'true');
+                }
+            });
+            document.querySelectorAll('.source-button').forEach(button => { if (!button.hasAttribute('data-listener-added')) { button.addEventListener('click', function() { this.parentElement.querySelectorAll('.source-button').forEach(btn => btn.classList.remove('active')); this.classList.add('active'); updateSentimentSource(this.textContent); }); button.setAttribute('data-listener-added', 'true'); } });
+            const generatePredBtn = document.getElementById('generate-prediction');
+            if (generatePredBtn && !generatePredBtn.hasAttribute('data-listener-added')) {
+                generatePredBtn.addEventListener('click', async function() {
+                    await fetchPredictionDataAndRender();
+                });
+                generatePredBtn.setAttribute('data-listener-added', 'true');
+            }
+            const changePassBtn = document.getElementById('change-password-btn'); if (changePassBtn && !changePassBtn.hasAttribute('data-listener-added')) { changePassBtn.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordModal); }); changePassBtn.setAttribute('data-listener-added', 'true'); }
+            const editProfileBtn = document.getElementById('edit-profile-btn'); if(editProfileBtn && !editProfileBtn.hasAttribute('data-listener-added')) { editProfileBtn.addEventListener('click', () => showAlert(document.querySelector('#profile-section .profile-header p'), 'Profile editing not implemented yet.', 'warning')); editProfileBtn.setAttribute('data-listener-added', 'true'); }
+            const settingsForm = document.querySelector('.settings-form'); if (settingsForm && !settingsForm.hasAttribute('data-listener-added')) { settingsForm.addEventListener('submit', (e) => { e.preventDefault(); const saveBtn = settingsForm.querySelector('.save-settings'); if (saveBtn) { saveBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> Saving...'; saveBtn.disabled = true; setTimeout(() => { showAlert(document.querySelector('#settings-section .section-header p'), 'Settings saved successfully (simulated).', 'success'); saveBtn.innerHTML = 'Save Settings'; saveBtn.disabled = false; }, 1000); } }); settingsForm.setAttribute('data-listener-added', 'true'); }
+        }
+
+        async function fetchPredictionDataAndRender() {
+            const generatePredBtn = document.getElementById('generate-prediction');
+            const priceChartLoader = document.getElementById('price-chart-loader');
+            const forecastLoader = document.getElementById('forecast-cards-loader');
+            const sentimentTrendLoader = document.getElementById('sentiment-trend-loader');
+            const techIndicatorsLoader = document.getElementById('technical-indicators-loader');
+            const techIndicatorsGrid = document.getElementById('indicators-grid-content');
+
+            if (generatePredBtn) {
+                generatePredBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> Predicting...';
+                generatePredBtn.disabled = true;
+            }
+            if (priceChartLoader) priceChartLoader.style.display = 'flex';
+            if (forecastLoader) { forecastLoader.textContent = 'Generating signals...'; forecastLoader.style.display = 'block'; }
+            if (sentimentTrendLoader) sentimentTrendLoader.style.display = 'flex';
+            if (techIndicatorsLoader) techIndicatorsLoader.style.display = 'flex';
+            if (techIndicatorsGrid) techIndicatorsGrid.style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log("Data received in fetchPredictionDataAndRender:", JSON.parse(JSON.stringify(data)));
+
+                updatePriceChart(data.historical_prices_for_chart || [], data.predictions || [], data.current_price);
+
+                if (data.predictions && data.historical_analysis && data.historical_analysis.avg_confidence) {
+                    const allConfidences = data.predictions.map(p => p.confidence).filter(c => typeof c === 'number' && !isNaN(c));
+                    if (allConfidences.length > 0) {
+                        const avgApiConfidence = allConfidences.reduce((a, b) => a + b, 0) / allConfidences.length;
+                        confidenceLevelSlider.value = Math.max(70, Math.min(95, Math.round(avgApiConfidence)));
+                        confidenceLevelDisplay.textContent = `${Math.round(avgApiConfidence)}%`;
+                    } else {
+                         confidenceLevelSlider.value = 85;
+                         confidenceLevelDisplay.textContent = '85%';
+                    }
+                } else {
+                    confidenceLevelSlider.value = 85;
+                    confidenceLevelDisplay.textContent = '85%';
+                }
+
+                if (data.predictions) {
+                    updateForecastCards(data.predictions);
+                } else {
+                     if(forecastLoader) forecastLoader.textContent = 'No prediction signals available.';
+                }
+
+                if (data.sentiment_summary) {
+                    globalSentimentData.all = {
+                        positive: data.sentiment_summary.positive || 0,
+                        negative: data.sentiment_summary.negative || 0,
+                        neutral: data.sentiment_summary.neutral === undefined ? 100 : data.sentiment_summary.neutral,
+                        score: data.sentiment_summary.score !== undefined ? data.sentiment_summary.score : 50,
+                        label: data.sentiment_summary.label || "Neutral"
+                    };
+                } else {
+                    globalSentimentData.all = { positive: 0, negative: 0, neutral: 100, score: 50, label: "Neutral" };
+                }
+                globalSentimentData.telegram = data.telegram_sentiment_summary || null;
+                globalSentimentData.reddit = data.reddit_sentiment_summary || null;
+
+                const activeSourceButton = document.querySelector('#dashboard-section .source-selector .source-button.active');
+                const activeSourceName = activeSourceButton ? activeSourceButton.textContent.trim().toLowerCase() : 'all';
+                updateSentimentDisplay(activeSourceName);
+
+
+                if (sentimentTrendChart && data.sentiment_timeline) {
+                    if (data.sentiment_timeline.dates &&
+                        data.sentiment_timeline.positive_ratios &&
+                        data.sentiment_timeline.negative_ratios &&
+                        data.sentiment_timeline.neutral_ratios) {
+
+                        sentimentTrendChart.data.labels = data.sentiment_timeline.dates.map(d => d.substring(5));
+
+                        sentimentTrendChart.data.datasets[0].data = data.sentiment_timeline.positive_ratios;
+                        sentimentTrendChart.data.datasets[1].data = data.sentiment_timeline.negative_ratios;
+                        sentimentTrendChart.data.datasets[2].data = data.sentiment_timeline.neutral_ratios;
+
+                        sentimentTrendChart.update();
+                        if(sentimentTrendLoader) sentimentTrendLoader.style.display = 'none';
+                    } else {
+                        console.warn("Sentiment timeline data received but missing required arrays (dates, positive_ratios, etc.)");
+                        if(sentimentTrendLoader) sentimentTrendLoader.textContent = 'Sentiment trend data format error.';
+                    }
+                } else {
+                     if(sentimentTrendLoader) sentimentTrendLoader.textContent = 'Sentiment trend data not available.';
+                }
+
+                if (data.technical_indicators_data) {
+                    updateTechnicalIndicatorCharts(data.technical_indicators_data);
+                    if (techIndicatorsLoader) techIndicatorsLoader.style.display = 'none';
+                    if (techIndicatorsGrid) techIndicatorsGrid.style.display = 'grid';
+                } else {
+                    if (techIndicatorsLoader) techIndicatorsLoader.textContent = 'Technical indicator data not available.';
+                }
+
+                if (generatePredBtn) {
+                    generatePredBtn.innerHTML = '<i class="fas fa-check"></i> Prediction Complete!';
+                    setTimeout(() => {
+                        if (generatePredBtn) {
+                             generatePredBtn.innerHTML = '<i class="fas fa-chart-line"></i> Generate Prediction';
+                             generatePredBtn.disabled = false;
+                        }
+                    }, 2000);
+                }
+
+            } catch (error) {
+                console.error("Error in fetchPredictionDataAndRender (after API call):", error);
+                const dashboardAlertLocation = document.getElementById('dashboard-section')?.querySelector('.prediction-header');
+                if (dashboardAlertLocation) {
+                    showAlert(dashboardAlertLocation, `Prediction Error: ${error.message}`, 'error');
+                } else {
+                     console.error("Could not find alert location for prediction error.");
+                }
+
+                if (generatePredBtn) {
+                    generatePredBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                     setTimeout(() => {
+                        if (generatePredBtn) {
+                            generatePredBtn.innerHTML = '<i class="fas fa-chart-line"></i> Generate Prediction';
+                            generatePredBtn.disabled = false;
+                        }
+                    }, 3000);
+                }
+            } finally {
+                 if (priceChartLoader && priceChart && priceChart.data.labels && priceChart.data.labels.length > 0) {
+                     priceChartLoader.style.display = 'none';
+                 }
+                 if (forecastLoader && document.getElementById('forecast-cards-list').children.length > 0 && !document.getElementById('forecast-cards-list').querySelector('p')) {
+                    forecastLoader.style.display = 'none';
+                 } else if (forecastLoader) {
+                     forecastLoader.textContent = 'No strong signals generated or data unavailable.';
+                 }
+
+                 if (sentimentTrendLoader && sentimentTrendChart && sentimentTrendChart.data.labels && sentimentTrendChart.data.labels.length > 0){
+                     sentimentTrendLoader.style.display = 'none';
+                 }
+            }
+        }
+
+        function initPriceChart() {
+            const priceCtx = document.getElementById('price-chart')?.getContext('2d');
+            if (!priceCtx) { console.error("Price chart canvas context not found!"); return; }
+            if (priceChart) priceChart.destroy();
+            priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [ { label: 'Historical Price', data: [], borderColor: 'var(--historical)', backgroundColor: 'rgba(58,123,213,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 1, pointHoverRadius: 4 }, { label: 'Predicted Price', data: [], borderColor: 'var(--prediction)', backgroundColor: 'rgba(255,61,113,0.1)', borderWidth: 2, borderDash: [5,5], tension: 0.4, fill: true, pointRadius: 1, pointHoverRadius: 4 } ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode:'index', intersect:false, backgroundColor:'rgba(15,22,41,0.9)', borderColor:'rgba(255,255,255,0.1)', borderWidth:1, titleColor:'#ffffff', bodyColor:'rgba(255,255,255,0.7)', padding:10, callbacks:{ label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` } }, annotation: { annotations: {} } },
+                scales: {
+                    x:{
+                        grid:{color:'rgba(255,255,255,0.05)'},
+                        ticks:{
+                            color:'rgba(255,255,255,0.7)',
+                            autoSkip: true,
+                            maxTicksLimit: 12
+                        }
+                    },
+                    y:{
+                        grid:{color:'rgba(255,255,255,0.05)'},
+                        ticks:{color:'rgba(255,255,255,0.7)', callback:v => '$'+v.toLocaleString() } }
+                    },
+                interaction: { mode:'nearest', axis:'x', intersect:false } }
+            });
+            const priceChartLoader = document.getElementById('price-chart-loader');
+            if (priceChartLoader && (!priceChart.data.labels || priceChart.data.labels.length === 0)) {
+                priceChartLoader.style.display = 'flex';
+            } else if (priceChartLoader) {
+                 priceChartLoader.style.display = 'none';
+            }
+        }
+
+        function updatePriceChart(historicalData, predictionsData, currentPrice) {
+            console.log("--- updatePriceChart CALLED (Robust Version 2) ---");
+            if (!priceChart) {
+                initPriceChart();
+                if (!priceChart) {
+                    console.error("CRITICAL: Price chart could NOT be initialized in updatePriceChart.");
+                    const loader = document.getElementById('price-chart-loader');
+                    if (loader) {
+                        loader.textContent = 'Chart initialization failed critically.';
+                        loader.style.display = 'flex';
+                    }
+                    return;
+                }
+            }
+
+            let chartLabels = [];
+            let historicalPoints = [];
+            let predictionPoints = [];
+
+            const safeHistoricalData = Array.isArray(historicalData) ? historicalData : [];
+            const safePredictionsData = Array.isArray(predictionsData) ? predictionsData : [];
+
+            safeHistoricalData.forEach(point => {
+                if (point && typeof point.x === 'string' && point.y !== undefined) {
+                    chartLabels.push(point.x);
+                    historicalPoints.push(point.y);
+                    predictionPoints.push(null);
+                }
+            });
+
+            const todayDateStr = new Date().toISOString().split('T')[0];
+            let todayIndex = chartLabels.indexOf(todayDateStr);
+
+            if (todayIndex === -1) {
+                if (currentPrice !== undefined && currentPrice !== null) {
+                    chartLabels.push(todayDateStr);
+                    historicalPoints.push(currentPrice);
+                    predictionPoints.push(currentPrice);
+                    todayIndex = chartLabels.length - 1;
+                } else if (safePredictionsData.length > 0) {
+                    chartLabels.push(todayDateStr);
+                    historicalPoints.push(null);
+                    predictionPoints.push(null);
+                    todayIndex = chartLabels.length - 1;
+                }
+            } else {
+                if (currentPrice !== undefined && currentPrice !== null) {
+                    historicalPoints[todayIndex] = currentPrice;
+                }
+                predictionPoints[todayIndex] = (currentPrice !== undefined && currentPrice !== null) ? currentPrice : historicalPoints[todayIndex];
+            }
+
+            safePredictionsData.forEach(pred => {
+                if (pred && typeof pred.date === 'string' && pred.predicted_price !== undefined) {
+                    const predDateStr = pred.date;
+                    let existingLabelIndex = chartLabels.indexOf(predDateStr);
+                    if (existingLabelIndex === -1) {
+                        chartLabels.push(predDateStr);
+                        historicalPoints.push(null);
+                        predictionPoints.push(pred.predicted_price);
+                    } else {
+                        if (predictionPoints[existingLabelIndex] === null || predDateStr === todayDateStr) {
+                             predictionPoints[existingLabelIndex] = pred.predicted_price;
+                        }
+                    }
+                }
+            });
+
+            if (chartLabels.length === 0) {
+                chartLabels.push(todayDateStr);
+                historicalPoints.push(currentPrice !== undefined && currentPrice !== null ? currentPrice : null);
+                predictionPoints.push(currentPrice !== undefined && currentPrice !== null ? currentPrice : null);
+            }
+
+            priceChart.data.labels = chartLabels;
+            priceChart.data.datasets[0].data = historicalPoints;
+            priceChart.data.datasets[1].data = predictionPoints;
+
+            const displayCurrentPriceLineAt = (currentPrice !== undefined && currentPrice !== null) ? currentPrice :
+                                             (todayIndex !== -1 && todayIndex < historicalPoints.length && historicalPoints[todayIndex] !== null ? historicalPoints[todayIndex] : null);
+
+            if (displayCurrentPriceLineAt !== null && typeof displayCurrentPriceLineAt === 'number') {
+                priceChart.options.plugins.annotation.annotations = {
+                    currentPriceLine: {
+                        type: 'line', yMin: displayCurrentPriceLineAt, yMax: displayCurrentPriceLineAt,
+                        borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1, borderDash: [6, 6],
+                        label: {
+                            content: 'Current: $' + displayCurrentPriceLineAt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                            enabled: true, position: 'end', backgroundColor: 'rgba(15,22,41,0.7)',
+                            color: '#ffffff', yAdjust: -10, font: { size: 10 }
+                        }
+                    }
+                };
+            } else {
+                priceChart.options.plugins.annotation.annotations = {};
+            }
+
+            try {
+                priceChart.update();
+            } catch (e) {
+                console.error("ERROR DURING chart.update():", e);
+            }
+
+            const priceChartLoader = document.getElementById('price-chart-loader');
+            if (priceChartLoader) {
+                if (chartLabels.length > 0 && (historicalPoints.some(p => p !== null) || predictionPoints.some(p => p !== null))) {
+                    priceChartLoader.style.display = 'none';
+                } else {
+                    priceChartLoader.textContent = 'No data available to display chart.';
+                    priceChartLoader.style.display = 'flex';
+                }
+            }
+        }
+
+
+        function initSentimentChart() {
+            const sentimentCtx = document.getElementById('sentiment-chart')?.getContext('2d');
+            if(!sentimentCtx) return;
+            if(sentimentChart) sentimentChart.destroy();
+
+            const initialNormalizedData = normalizeJsSentimentRatios(
+                globalSentimentData.all.positive,
+                globalSentimentData.all.negative,
+                globalSentimentData.all.neutral
+            );
+             globalSentimentData.all.positive = initialNormalizedData.positive;
+             globalSentimentData.all.negative = initialNormalizedData.negative;
+             globalSentimentData.all.neutral = initialNormalizedData.neutral;
+
+            sentimentChart = new Chart(sentimentCtx, {
+                type:'doughnut',
+                data:{
+                    labels:['Positive','Negative','Neutral'],
+                    datasets:[{
+                        data:[initialNormalizedData.positive, initialNormalizedData.negative, initialNormalizedData.neutral],
+                        backgroundColor:[
+                            'var(--success)',
+                            'var(--danger)',
+                            'var(--neutral-color)'
+                        ],
+                        borderColor: 'var(--chart-border)',
+                        borderWidth:1
+                    }]
+                },
+                options:{
+                    responsive:true, maintainAspectRatio:false, cutout:'70%',
+                    plugins:{legend:{display:false},tooltip:{
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) { label += context.parsed.toFixed(1) + '%'; }
+                                return label;
+                            }
+                        }
+                    }}
+                }
+            });
+            updateSentimentDisplay('all');
+        }
+
+        function updateSentimentDisplay(sourceKey = 'all') {
+            const sourceNameNormalized = sourceKey.toLowerCase();
+            let sentimentDataToUse = null;
+            let displayScoreValue = '--%';
+            let displayLabelText = 'Awaiting Data';
+            let displayScoreColor = 'var(--light)';
+            let donutData = [0, 0, 100];
+
+            const scoreDisplayEl = document.getElementById('sentiment-score-display');
+            const labelDisplayEl = document.getElementById('sentiment-overall-label');
+            const barPositiveEl = document.getElementById('sentiment-bar-positive');
+            const barNegativeEl = document.getElementById('sentiment-bar-negative');
+            const barNeutralEl = document.getElementById('sentiment-bar-neutral');
+
+            if (sourceNameNormalized === 'all') {
+                sentimentDataToUse = globalSentimentData.all;
+                if (!sentimentDataToUse || (sentimentDataToUse.positive === 0 && sentimentDataToUse.negative === 0 && sentimentDataToUse.neutral === 100 && sentimentDataToUse.score === 50)) {
+                     displayLabelText = "Overall (Awaiting Data)";
+                }
+            } else if (sourceNameNormalized === 'telegram') {
+                sentimentDataToUse = globalSentimentData.telegram;
+                if (!sentimentDataToUse) displayLabelText = "No Telegram Data";
+            } else if (sourceNameNormalized === 'reddit') {
+                sentimentDataToUse = globalSentimentData.reddit;
+                 if (!sentimentDataToUse) displayLabelText = "No Reddit Data";
+            } else {
+                displayLabelText = "No Data Selected";
+            }
+
+            if (!sentimentDataToUse) {
+                 sentimentDataToUse = { positive:0, negative:0, neutral:100, score:50, label: displayLabelText };
+            }
+
+            const normalizedRatios = normalizeJsSentimentRatios(
+                sentimentDataToUse.positive,
+                sentimentDataToUse.negative,
+                sentimentDataToUse.neutral
+            );
+
+            let p_perc = normalizedRatios.positive;
+            let n_perc = normalizedRatios.negative;
+            let u_perc = normalizedRatios.neutral;
+            donutData = [p_perc, n_perc, u_perc];
+
+            const currentScore = sentimentDataToUse.score !== undefined ? sentimentDataToUse.score : 50;
+            displayScoreValue = `${Math.round(currentScore)}%`;
+
+            let calculatedLabelBasedOnScore = sentimentDataToUse.label || "Neutral";
+            if (currentScore > 60 && !sentimentDataToUse.label) calculatedLabelBasedOnScore = 'Positive';
+            else if (currentScore < 40 && !sentimentDataToUse.label) calculatedLabelBasedOnScore = 'Negative';
+
+            displayLabelText = displayLabelText.includes("Awaiting Data") || displayLabelText.includes("No Data") ? displayLabelText : calculatedLabelBasedOnScore;
+
+            if (displayLabelText.toLowerCase().includes('positive')) {
+                displayScoreColor = 'var(--success)';
+                if(barPositiveEl) barPositiveEl.style.backgroundColor = 'var(--success)';
+                if(barNegativeEl) barNegativeEl.style.backgroundColor = 'var(--danger)';
+                if(barNeutralEl) barNeutralEl.style.backgroundColor = 'var(--neutral-color)';
+            } else if (displayLabelText.toLowerCase().includes('negative')) {
+                displayScoreColor = 'var(--danger)';
+                if(barPositiveEl) barPositiveEl.style.backgroundColor = 'var(--success)';
+                if(barNegativeEl) barNegativeEl.style.backgroundColor = 'var(--danger)';
+                if(barNeutralEl) barNeutralEl.style.backgroundColor = 'var(--neutral-color)';
+            } else {
+                displayScoreColor = 'var(--neutral-color)';
+                if (displayLabelText.toLowerCase().includes("awaiting") || displayLabelText.toLowerCase().includes("no data")) {
+                    displayScoreColor = 'var(--light)';
+                }
+                if(barPositiveEl) barPositiveEl.style.backgroundColor = 'var(--success)';
+                if(barNegativeEl) barNegativeEl.style.backgroundColor = 'var(--danger)';
+                if(barNeutralEl) barNeutralEl.style.backgroundColor = 'var(--neutral-color)';
+            }
+
+
+            if (sentimentChart) {
+                sentimentChart.data.datasets[0].data = donutData;
+                sentimentChart.data.datasets[0].backgroundColor = [
+                    'var(--success)',
+                    'var(--danger)',
+                    'var(--neutral-color)'
+                ];
+                sentimentChart.update();
+            }
+
+            if (scoreDisplayEl) {
+                scoreDisplayEl.textContent = displayScoreValue;
+                scoreDisplayEl.style.color = displayScoreColor;
+            }
+            if (labelDisplayEl) {
+                labelDisplayEl.textContent = displayLabelText;
+            }
+
+            if (barPositiveEl && barNegativeEl && barNeutralEl) {
+                barPositiveEl.style.width = `${p_perc.toFixed(1)}%`;
+                barNegativeEl.style.width = `${n_perc.toFixed(1)}%`;
+                let neutralWidth = Math.max(0, 100.0 - p_perc - n_perc);
+                barNeutralEl.style.width = `${neutralWidth.toFixed(1)}%`;
+
+                const p_text = Math.round(p_perc);
+                const n_text = Math.round(n_perc);
+                let u_text = Math.round(neutralWidth);
+
+                barPositiveEl.textContent = p_text > 5 ? `${p_text}%` : (p_perc > 0.1 ? `` : '');
+                barNegativeEl.textContent = n_text > 5 ? `${n_text}%` : (n_perc > 0.1 ? `` : '');
+                barNeutralEl.textContent = u_text > 5 ? `${u_text}%` : (u_perc > 0.1 ? `` : '');
+
+                if (displayLabelText.toLowerCase().includes("awaiting") || displayLabelText.toLowerCase().includes("no data")){
+                    barPositiveEl.textContent = ''; barNegativeEl.textContent = ''; barNeutralEl.textContent = '';
+                } else if (barPositiveEl.textContent === '' && barNegativeEl.textContent === '' && barNeutralEl.textContent === '' && (p_perc + n_perc + u_perc > 99)) {
+                    if (u_perc >= p_perc && u_perc >= n_perc) barNeutralEl.textContent = `${Math.round(u_perc)}%`;
+                    else if (p_perc >= n_perc) barPositiveEl.textContent = `${Math.round(p_perc)}%`;
+                    else barNegativeEl.textContent = `${Math.round(n_perc)}%`;
+                }
+            }
+        }
+
+        function initTechnicalIndicatorCharts() {
+            const commonLineOptions = (yLabelCallback = v => v) => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.7)', autoSkip: true, maxTicksLimit: 7 } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.7)', callback: yLabelCallback } } } });
+            const sma20Ctx = document.getElementById('sma20-chart')?.getContext('2d');
+            if (sma20Ctx) { if(sma20Chart) sma20Chart.destroy(); sma20Chart = new Chart(sma20Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'SMA 20', data: [], borderColor: 'var(--historical)', borderWidth: 2, tension: 0.4, pointRadius: 0 }] }, options: commonLineOptions(v => '$' + (v / 1000).toFixed(1) + 'k') }); }
+            const rsiCtx = document.getElementById('rsi-chart')?.getContext('2d');
+            if (rsiCtx) { if(rsiChart) rsiChart.destroy(); rsiChart = new Chart(rsiCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'RSI', data: [], borderColor: '#00d2ff', borderWidth: 2, tension: 0.4, pointRadius: 0 }] }, options: {...commonLineOptions(), plugins: { legend:{display:false}, annotation:{annotations:{line1:{type:'line',yMin:70,yMax:70,borderColor:'var(--danger)',borderWidth:1,borderDash:[6,6]},line2:{type:'line',yMin:30,yMax:30,borderColor:'var(--success)',borderWidth:1,borderDash:[6,6]}}}}, scales: {...commonLineOptions().scales, y: {...commonLineOptions().scales.y, min:0, max:100}}} }); }
+            const bbCtx = document.getElementById('bb-chart')?.getContext('2d');
+            if (bbCtx) { if(bbChart) bbChart.destroy(); bbChart = new Chart(bbCtx, { type: 'line', data: { labels: [], datasets: [ { label: 'Price', data: [], borderColor: 'var(--historical)', borderWidth: 1.5, pointRadius: 0, tension: 0.1, order: 1 }, { label: 'Upper Band', data: [], borderColor: 'rgba(247,147,26,0.5)', borderWidth: 1, borderDash: [3,3], pointRadius: 0, tension: 0.1, fill: '+1', backgroundColor:'rgba(247,147,26,0.05)', order: 0 }, { label: 'Lower Band', data: [], borderColor: 'rgba(247,147,26,0.5)', borderWidth: 1, borderDash: [3,3], pointRadius: 0, tension: 0.1, fill: false, order: 0 } ] }, options: commonLineOptions(v => '$' + (v / 1000).toFixed(1) + 'k') }); }
+            const volatilityCtx = document.getElementById('volatility-chart')?.getContext('2d');
+            if (volatilityCtx) { if(volatilityChart) volatilityChart.destroy(); volatilityChart = new Chart(volatilityCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Volatility', data: [], borderColor: 'var(--neutral-color)', borderWidth: 2, tension: 0.4, pointRadius: 0 }] }, options: commonLineOptions() }); }
+        }
+
+        function updateTechnicalIndicatorCharts(techData) {
+            const techLoader = document.getElementById('technical-indicators-loader');
+            const techGrid = document.getElementById('indicators-grid-content');
+            if (techLoader) techLoader.style.display = 'none';
+            if (techGrid) techGrid.style.display = 'grid';
+            if (!techData || !techData.labels || techData.labels.length === 0) {
+                console.warn("Technical indicator data or labels missing.");
+                [sma20Chart, rsiChart, bbChart, volatilityChart].forEach(chart => { if (chart) { chart.data.labels = []; chart.data.datasets.forEach(ds => ds.data = []); chart.update(); } });
+                document.getElementById('current-sma20').textContent = 'Current: N/A';
+                document.getElementById('current-rsi').textContent = 'Current: N/A';
+                document.getElementById('current-bollinger-upper').textContent = 'Upper: N/A';
+                document.getElementById('current-bollinger-lower').textContent = 'Lower: N/A';
+                document.getElementById('current-volatility').textContent = 'Current: N/A';
+                if (techLoader) techLoader.style.display = 'flex';
+                if (techLoader) techLoader.textContent = 'Insufficient data for indicators.';
+                if (techGrid) techGrid.style.display = 'none';
+                return;
+            }
+            const labels = techData.labels.map(l => l.startsWith('D') ? l : l.substring(5));
+            const currentValues = techData.current_values || {};
+
+            if (sma20Chart && techData.sma_20_data) { sma20Chart.data.labels = labels; sma20Chart.data.datasets[0].data = techData.sma_20_data; sma20Chart.update(); document.getElementById('current-sma20').textContent = `Current: $${currentValues.sma_20?.toLocaleString(undefined, {maximumFractionDigits:0}) || 'N/A'}`; }
+            if (rsiChart && techData.rsi_data) { rsiChart.data.labels = labels; rsiChart.data.datasets[0].data = techData.rsi_data; rsiChart.update(); document.getElementById('current-rsi').textContent = `Current: ${currentValues.rsi?.toFixed(1) || 'N/A'}`; }
+            if (bbChart && techData.bollinger_upper_data && techData.bollinger_lower_data && techData.price_data) { bbChart.data.labels = labels; bbChart.data.datasets[0].data = techData.price_data; bbChart.data.datasets[1].data = techData.bollinger_upper_data; bbChart.data.datasets[2].data = techData.bollinger_lower_data; bbChart.update(); document.getElementById('current-bollinger-upper').textContent = `Upper: $${currentValues.bollinger_upper?.toLocaleString(undefined, {maximumFractionDigits:0}) || 'N/A'}`; document.getElementById('current-bollinger-lower').textContent = `Lower: $${currentValues.bollinger_lower?.toLocaleString(undefined, {maximumFractionDigits:0}) || 'N/A'}`; }
+            if (volatilityChart && techData.volatility_data) { volatilityChart.data.labels = labels; volatilityChart.data.datasets[0].data = techData.volatility_data; volatilityChart.update(); document.getElementById('current-volatility').textContent = `Current: ${currentValues.volatility?.toFixed(2) || 'N/A'}`; }
+        }
+
+        function initSentimentTrendChart(){
+            const sentimentTrendCtx=document.getElementById('sentiment-trend')?.getContext('2d');
+            if(!sentimentTrendCtx)return;
+            if(sentimentTrendChart) sentimentTrendChart.destroy();
+
+            sentimentTrendChart=new Chart(sentimentTrendCtx,{
+                type:'line',
+                data:{
+                    labels:[],
+                    datasets:[
+                        {
+                            label:'Positive',
+                            data:[],
+                            borderColor: 'var(--success)',
+                            backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                            borderWidth: 2, tension:0.4, pointRadius:1, pointHoverRadius: 3,
+                            fill: true
+                        },
+                        {
+                            label:'Negative',
+                            data:[],
+                            borderColor: 'var(--danger)',
+                            backgroundColor: 'rgba(255, 61, 113, 0.1)',
+                            borderWidth:2, tension:0.4, pointRadius:1, pointHoverRadius: 3,
+                            fill: true
+                        },
+                        {
+                            label:'Neutral',
+                            data:[],
+                            borderColor: 'var(--neutral-color)',
+                            backgroundColor: 'rgba(58, 123, 213, 0.1)',
+                            borderWidth:2, tension:0.4, pointRadius:1, pointHoverRadius: 3,
+                            fill: true,
+                            hidden: true
+                        }
+                    ]
+                },
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    plugins:{
+                        legend:{
+                            display: true,
+                            position: 'bottom',
+                            labels: { color: 'rgba(255,255,255,0.8)' }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(1) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales:{
+                        x:{
+                            grid:{color:'rgba(255,255,255,0.05)'},
+                            ticks:{color:'rgba(255,255,255,0.7)', autoSkip: true, maxTicksLimit: 10}
+                        },
+                        y:{
+                            min:0,max:100,
+                            grid:{color:'rgba(255,255,255,0.05)'},
+                            ticks:{color:'rgba(255,255,255,0.7)',callback:v=>v+'%'}
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function initSentimentSectionCharts(){
+            const sentimentDonutCtx=document.getElementById('sentiment-donut-chart')?.getContext('2d');
+            if(sentimentDonutCtx) {
+                if(sentimentDonutSectionChart) sentimentDonutSectionChart.destroy();
+                 const initialNormalizedDetailed = normalizeJsSentimentRatios(0,0,100);
+                sentimentDonutSectionChart = new Chart(sentimentDonutCtx,{
+                    type:'doughnut',
+                    data:{
+                        labels:['Positive','Negative','Neutral'],
+                        datasets:[{
+                            data:[initialNormalizedDetailed.positive, initialNormalizedDetailed.negative, initialNormalizedDetailed.neutral],
+                            backgroundColor:[
+                                '#00c853',
+                                '#ff3d71',
+                                '#3a7bd5'
+                            ],
+                            borderColor: 'var(--chart-border)',
+                            borderWidth:1
+                        }]
+                    },
+                    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{}}}
+                });
+            }
+            const sentimentTrendSectionCtx=document.getElementById('sentiment-trend-section')?.getContext('2d');
+            if(sentimentTrendSectionCtx) {
+                if(sentimentTrendSectionChart) sentimentTrendSectionChart.destroy();
+                sentimentTrendSectionChart=new Chart(sentimentTrendSectionCtx,{
+                    type:'line',
+                    data:{
+                        labels:[],
+                        datasets:[{
+                            label:'Overall Sentiment Score',
+                            data:[],
+                            borderColor:'var(--neutral-color)',
+                            borderWidth:2,tension:0.4,pointRadius:1, pointHoverRadius:3,
+                            fill:{target:'origin',above:'rgba(58,123,213,0.1)',below:'rgba(58,123,213,0.1)'}
+                        }]
+                    },
+                    options:{
+                        responsive:true,maintainAspectRatio:false,
+                        plugins:{legend:{display:false},annotation:{annotations:{line1:{type:'line',yMin:50,yMax:50,borderColor:'rgba(255,255,255,0.3)',borderWidth:1,borderDash:[6,6]}}}},
+                        scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.7)', autoSkip: true, maxTicksLimit: 15}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.7)',callback:v=>v+'%'}}}
+                    }
+                });
+            }
+        }
+
+        async function fetchAndDisplayDetailedSentiment(days = 30) {
+            const loader = document.getElementById('detailed-sentiment-loader');
+            const content = document.getElementById('detailed-sentiment-content');
+            if (loader) loader.style.display = 'flex';
+            if (content) content.style.display = 'none';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/sentiment-timeline?days=${days}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log("Detailed Sentiment API Response (/api/sentiment-timeline):", JSON.parse(JSON.stringify(data)));
+
+
+                if (sentimentDonutSectionChart && data.analysis) {
+                    const normalizedDetailedRatios = normalizeJsSentimentRatios(
+                        data.analysis.positive,
+                        data.analysis.negative,
+                        data.analysis.neutral
+                    );
+                    const p_perc_detailed = normalizedDetailedRatios.positive;
+                    const n_perc_detailed = normalizedDetailedRatios.negative;
+                    const u_perc_detailed = normalizedDetailedRatios.neutral;
+
+
+                    sentimentDonutSectionChart.data.datasets[0].data = [p_perc_detailed, n_perc_detailed, u_perc_detailed];
+                    sentimentDonutSectionChart.data.datasets[0].backgroundColor = [
+                        '#00c853',
+                        '#ff3d71',
+                        '#3a7bd5'
+                    ];
+                    sentimentDonutSectionChart.update();
+
+                    const scoreEl = document.getElementById('detailed-sentiment-overall-score');
+                    const textEl = document.getElementById('detailed-sentiment-overall-text');
+
+                    if (scoreEl && textEl) {
+                        let dominantSentimentValue = u_perc_detailed;
+                        let dominantSentimentLabel = "Neutral";
+                        let dominantSentimentColor = '#3a7bd5';
+
+                        if (p_perc_detailed >= n_perc_detailed && p_perc_detailed >= u_perc_detailed) {
+                            dominantSentimentValue = p_perc_detailed;
+                            dominantSentimentLabel = "Positive";
+                            dominantSentimentColor = '#00c853';
+                        } else if (n_perc_detailed >= p_perc_detailed && n_perc_detailed >= u_perc_detailed) {
+                            dominantSentimentValue = n_perc_detailed;
+                            dominantSentimentLabel = "Negative";
+                            dominantSentimentColor = '#ff3d71';
+                        }
+
+
+                        scoreEl.childNodes[0].nodeValue = `${dominantSentimentValue.toFixed(0)}% `;
+                        textEl.textContent = dominantSentimentLabel;
+                        textEl.className = `sentiment-overall-text ${dominantSentimentLabel.toLowerCase()}`;
+                        textEl.style.color = dominantSentimentColor;
+                    }
+                }
+
+                if (sentimentTrendSectionChart && data.timeline_data) {
+                    const labels = data.timeline_data.map(item => item.date ? item.date.substring(5) : 'N/A');
+                    const scores = data.timeline_data.map(item => item.score !== null && item.score !== undefined ? item.score : 50);
+                    sentimentTrendSectionChart.data.labels = labels;
+                    sentimentTrendSectionChart.data.datasets[0].data = scores;
+                    sentimentTrendSectionChart.update();
+                }
+
+                const sourceBarsContainer = document.getElementById('detailed-source-bars');
+                 if (sourceBarsContainer && data.analysis && data.analysis.source_distribution) {
+                    const redditBarFill = sourceBarsContainer.querySelector('.reddit .bar-fill');
+                    const telegramBarFill = sourceBarsContainer.querySelector('.telegram .bar-fill');
+
+                    let redditPercRaw = data.analysis.source_distribution.reddit || 0;
+                    let telegramPercRaw = data.analysis.source_distribution.telegram || 0;
+
+
+                    const totalSourcePerc = redditPercRaw + telegramPercRaw;
+                    let redditPercNormalized = 0;
+                    let telegramPercNormalized = 0;
+
+                    if (totalSourcePerc > 0) {
+                        redditPercNormalized = (redditPercRaw / totalSourcePerc) * 100;
+                        telegramPercNormalized = (telegramPercRaw / totalSourcePerc) * 100;
+                    } else {
+                        redditPercNormalized = 50;
+                        telegramPercNormalized = 50;
+                        if (redditPercRaw === 0 && telegramPercRaw === 0) {
+                           redditPercNormalized = 0;
+                           telegramPercNormalized = 0;
+                        }
+                    }
+
+
+                    if(redditBarFill) {
+                        redditBarFill.style.width = `${Math.max(0, Math.min(100, redditPercNormalized)).toFixed(1)}%`;
+                        redditBarFill.textContent = redditPercNormalized > 5 ? `${Math.round(redditPercNormalized)}%` : '';
+                    }
+                    if(telegramBarFill) {
+                        telegramBarFill.style.width = `${Math.max(0, Math.min(100, telegramPercNormalized)).toFixed(1)}%`;
+                        telegramBarFill.textContent = telegramPercNormalized > 5 ? `${Math.round(telegramPercNormalized)}%` : '';
+                    }
+                } else if (sourceBarsContainer) {
+                     console.warn("Source Breakdown distribution data not provided by backend or data.analysis.source_distribution missing.");
+                     const redditBarFill = sourceBarsContainer.querySelector('.reddit .bar-fill');
+                     const telegramBarFill = sourceBarsContainer.querySelector('.telegram .bar-fill');
+                     if(redditBarFill) { redditBarFill.style.width = `0%`; redditBarFill.textContent = `0%`; }
+                     if(telegramBarFill) { telegramBarFill.style.width = `0%`; telegramBarFill.textContent = `0%`; }
+                }
+
+
+                if (loader) loader.style.display = 'none';
+                if (content) content.style.display = 'grid';
+            } catch (error) {
+                console.error("Error fetching detailed sentiment data:", error);
+                if (loader) { loader.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`; loader.style.display = 'flex'; }
+                if (content) content.style.display = 'none';
+            }
+        }
+
+        function updateForecastCards(predictions) {
+            const forecastList = document.getElementById('forecast-cards-list');
+            const forecastLoader = document.getElementById('forecast-cards-loader');
+            if (!forecastList) return;
+            forecastList.innerHTML = '';
+
+            if (!predictions || predictions.length === 0) {
+                if (forecastLoader) {
+                    forecastLoader.textContent = 'No prediction signals available.';
+                    forecastLoader.style.display = 'block';
+                } else {
+                    forecastList.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,0.5);padding:20px;">No prediction signals available.</p>';
+                }
+                return;
+            }
+            if (forecastLoader) forecastLoader.style.display = 'none';
+
+            predictions.forEach(signal => {
+                const card = document.createElement('div');
+                card.className = 'forecast-card';
+                const dateParts = signal.date.split('-');
+                const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+
+                const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const dayLabel = `Day +${signal.day_number}`;
+
+                let sentimentClass = 'neutral';
+                if (signal.signal_type && signal.signal_type.toLowerCase() === 'buy') sentimentClass = 'bullish';
+                else if (signal.signal_type && signal.signal_type.toLowerCase() === 'sell') sentimentClass = 'bearish';
+
+                card.innerHTML = `
+                    <div class="forecast-date">${dateStr} (${dayLabel})</div>
+                    <div class="forecast-value">
+                        <span>~$${(signal.predicted_price || 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        <span class="forecast-sentiment ${sentimentClass}">${(signal.signal_type || 'HOLD').toUpperCase()}</span>
+                    </div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.5);">Confidence: ${(signal.confidence || 50).toFixed(0)}%</div>`;
+                forecastList.appendChild(card);
+            });
+            filterSignals('ALL');
+        }
+
+        function filterSignals(filterType){
+            const forecastCards = document.querySelectorAll('#forecast-cards-list .forecast-card');
+            let visibleCount = 0;
+            forecastCards.forEach(card => {
+                const sentimentSpan = card.querySelector('.forecast-sentiment');
+                const cardSignalType = sentimentSpan ? sentimentSpan.textContent.trim().toUpperCase() : 'UNKNOWN';
+                const isVisible = filterType === 'ALL' || cardSignalType === filterType.toUpperCase();
+                card.style.display = isVisible ? 'block' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            const forecastList = document.getElementById('forecast-cards-list');
+            let noSignalMsg = forecastList.querySelector('.no-signal-message');
+            if (visibleCount === 0 && forecastCards.length > 0) {
+                if (!noSignalMsg) { noSignalMsg = document.createElement('p'); noSignalMsg.className = 'no-signal-message'; noSignalMsg.style.textAlign = 'center'; noSignalMsg.style.color = 'rgba(255,255,255,0.5)'; noSignalMsg.style.padding = '20px'; forecastList.appendChild(noSignalMsg); }
+                noSignalMsg.textContent = `No ${filterType.toLowerCase()} signals found.`;
+            } else if (noSignalMsg) { noSignalMsg.remove(); }
+        }
+
+        function updateChartData(period){console.log(`Updating chart for period: ${period}`);showAlert(document.querySelector('#dashboard-section .prediction-section .prediction-header'),`Chart period switching not fully implemented yet. Backend provides fixed horizon.`,'warning');}
+
+        function updateSentimentSource(sourceName){
+            console.log(`Updating sentiment for source: ${sourceName}`);
+            const sourceKey = sourceName.trim().toLowerCase();
+            updateSentimentDisplay(sourceKey);
+        }
+
+        let loginParticles = []; const loginParticleCount = 80; let loginPredictionLines = []; let loginWidth, loginHeight;
+        function resizeLoginCanvas(){if(!loginCanvas||!loginCtx)return;loginWidth=window.innerWidth;loginHeight=window.innerHeight;loginCanvas.width=loginWidth;loginCanvas.height=loginHeight;loginParticles=[];for(let i=0;i<loginParticleCount;i++)loginParticles.push({x:Math.random()*loginWidth,y:Math.random()*loginHeight,size:Math.random()*1.5+.5,speedX:(Math.random()-.5)*.2,speedY:(Math.random()-.5)*.2,color:Math.random()>.5?`rgba(58,123,213,${Math.random()*.3+.1})`:`rgba(247,147,26,${Math.random()*.3+.1})`});loginPredictionLines.length=0;for(let i=0;i<3;i++)loginPredictionLines.push({x:Math.random()*loginWidth,y:loginHeight+Math.random()*100,speed:Math.random()*.5+.2,length:Math.random()*80+40,opacity:Math.random()*.2+.05,color:i%2===0?'rgba(58,123,213,0.4)':'rgba(247,147,26,0.4)'});}
+        function animateLoginParticles(){if(!loginCtx||loginPage.style.display==='none'){cancelAnimationFrame(animationFrameIdLogin);animationFrameIdLogin=null;return;}try{loginCtx.clearRect(0,0,loginWidth,loginHeight);loginParticles.forEach(p=>{loginCtx.fillStyle=p.color;loginCtx.beginPath();loginCtx.arc(p.x,p.y,p.size,0,Math.PI*2);loginCtx.fill();p.x+=p.speedX;p.y+=p.speedY;if(p.x<-p.size)p.x=loginWidth+p.size;else if(p.x>loginWidth+p.size)p.x=-p.size;if(p.y<-p.size)p.y=loginHeight+p.size;else if(p.y>loginHeight+p.size)p.y=-p.size;});for(let i=0;i<loginParticles.length;i++){for(let j=i+1;j<loginParticles.length;j++){const dx=loginParticles[i].x-loginParticles[j].x;const dy=loginParticles[i].y-loginParticles[j].y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<100){loginCtx.strokeStyle=`rgba(200,200,200,${.4*(1-dist/100)})`;loginCtx.lineWidth=.3;loginCtx.beginPath();loginCtx.moveTo(loginParticles[i].x,loginParticles[i].y);loginCtx.lineTo(loginParticles[j].x,loginParticles[j].y);loginCtx.stroke();}}}loginPredictionLines.forEach(line=>{loginCtx.strokeStyle=line.color;loginCtx.globalAlpha=line.opacity;loginCtx.lineWidth=1;loginCtx.beginPath();loginCtx.moveTo(line.x,line.y);loginCtx.lineTo(line.x+(Math.random()-.5)*5,line.y-line.length);loginCtx.stroke();loginCtx.globalAlpha=1;line.y-=line.speed;if(line.y<-line.length){line.y=loginHeight+Math.random()*50;line.x=Math.random()*loginWidth;}});animationFrameIdLogin=requestAnimationFrame(animateLoginParticles);}catch(e){console.error("Login anim error:",e);if(animationFrameIdLogin)cancelAnimationFrame(animationFrameIdLogin);animationFrameIdLogin=null;}}
+        let dashboardParticles=[];const dashboardParticleCount=40;let dashboardWidth,dashboardHeight;
+        function resizeDashboardCanvas(){if(!dashboardCanvas||!dashboardCtx)return;dashboardWidth=dashboardCanvas.offsetWidth;dashboardHeight=dashboardCanvas.offsetHeight;dashboardCanvas.width=dashboardWidth;dashboardCanvas.height=dashboardHeight;dashboardParticles=[];for(let i=0;i<dashboardParticleCount;i++)dashboardParticles.push({x:Math.random()*dashboardWidth,y:Math.random()*dashboardHeight,size:Math.random()*1.2+.4,speedX:(Math.random()-.5)*.15,speedY:(Math.random()-.5)*.15,color:`rgba(255,255,255,${Math.random()*.1+.03})`});}
+        function animateDashboardParticles(){if(!dashboardCtx||dashboardPage.style.display==='none'){cancelAnimationFrame(animationFrameIdDashboard);animationFrameIdDashboard=null;return;}try{dashboardCtx.clearRect(0,0,dashboardWidth,dashboardHeight);dashboardParticles.forEach(p=>{dashboardCtx.fillStyle=p.color;dashboardCtx.beginPath();dashboardCtx.arc(p.x,p.y,p.size,0,Math.PI*2);dashboardCtx.fill();p.x+=p.speedX;p.y+=p.speedY;if(p.x<-p.size)p.x=dashboardWidth+p.size;else if(p.x>dashboardWidth+p.size)p.x=-p.size;if(p.y<-p.size)p.y=dashboardHeight+p.size;else if(p.y>dashboardHeight+p.size)p.y=-p.size;});for(let i=0;i<dashboardParticles.length;i++){for(let j=i+1;j<dashboardParticles.length;j++){const dx=dashboardParticles[i].x-dashboardParticles[j].x;const dy=dashboardParticles[i].y-dashboardParticles[j].y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){dashboardCtx.strokeStyle=`rgba(200,200,200,${.05*(1-dist/120)})`;dashboardCtx.lineWidth=.2;dashboardCtx.beginPath();dashboardCtx.moveTo(dashboardParticles[i].x,dashboardParticles[i].y);dashboardCtx.lineTo(dashboardParticles[j].x,dashboardParticles[j].y);dashboardCtx.stroke();}}}animationFrameIdDashboard=requestAnimationFrame(animateDashboardParticles);}catch(e){console.error("Dashboard anim error:",e);if(animationFrameIdDashboard)cancelAnimationFrame(animationFrameIdDashboard);animationFrameIdDashboard=null;}}
+        function startStopAnimations(){if(loginPage.style.display==='flex'){if(animationFrameIdDashboard){cancelAnimationFrame(animationFrameIdDashboard);animationFrameIdDashboard=null;}if(loginCtx&&!animationFrameIdLogin){resizeLoginCanvas();animateLoginParticles();}}else if(dashboardPage.style.display==='block'){if(animationFrameIdLogin){cancelAnimationFrame(animationFrameIdLogin);animationFrameIdLogin=null;}if(dashboardCtx&&!animationFrameIdDashboard){resizeDashboardCanvas();animateDashboardParticles();}}else{if(animationFrameIdLogin){cancelAnimationFrame(animationFrameIdLogin);animationFrameIdLogin=null;}if(animationFrameIdDashboard){cancelAnimationFrame(animationFrameIdDashboard);animationFrameIdDashboard=null;}}}
+
+        function initializeApp() {
+             createAccountLink?.addEventListener('click', (e) => { e.preventDefault(); showModal(createAccountModal); });
+             forgotPasswordLink?.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordModal); });
+             closeCreateAccount?.addEventListener('click', () => hideModal(createAccountModal));
+             closeForgotPassword?.addEventListener('click', () => hideModal(forgotPasswordModal));
+             window.addEventListener('click', (e) => { if (e.target === createAccountModal) hideModal(createAccountModal); if (e.target === forgotPasswordModal) hideModal(forgotPasswordModal); });
+             loginForm?.addEventListener('submit', async (e) => { e.preventDefault(); loginButton.innerHTML = '<span class="spinner"></span> Signing in...'; loginButton.disabled = true; await new Promise(resolve => setTimeout(resolve, 500)); const result = auth.login(username.value, password.value); if (!result.success) { showAlert(loginAlert, result.message); loginButton.innerHTML = 'Sign In'; loginButton.disabled = false; } });
+             registerForm?.addEventListener('submit', async (e) => { e.preventDefault(); const pwd = document.getElementById('register-password').value; const confirmPwd = document.getElementById('register-confirm-password').value; if (pwd !== confirmPwd) { showAlert(registerAlert, 'Passwords do not match'); return; } registerButton.innerHTML = '<span class="spinner"></span> Creating...'; registerButton.disabled = true; await new Promise(resolve => setTimeout(resolve, 1000)); const result = auth.register(document.getElementById('register-username').value, document.getElementById('register-email').value, pwd); if (result.success) { showAlert(registerAlert, 'Account created! Please log in.', 'success'); registerForm.reset(); setTimeout(() => { hideModal(createAccountModal); registerButton.innerHTML = 'Create Account'; registerButton.disabled = false; }, 2000); } else { showAlert(registerAlert, result.message); registerButton.innerHTML = 'Create Account'; registerButton.disabled = false; } });
+             forgotPasswordForm?.addEventListener('submit', async (e) => { e.preventDefault(); resetButton.innerHTML = '<span class="spinner"></span> Sending...'; resetButton.disabled = true; await new Promise(resolve => setTimeout(resolve, 1000)); const result = auth.requestPasswordReset(document.getElementById('forgot-email').value); showAlert(forgotAlert, result.message, result.success ? 'success' : 'error'); resetButton.innerHTML = 'Send Reset Link'; resetButton.disabled = false; if(result.success) { forgotPasswordForm.reset(); setTimeout(() => hideModal(forgotPasswordModal), 3000); } });
+             const closeWelcomeModalBtn = document.getElementById('close-welcome-modal');
+             const welcomeModalOkBtn = document.getElementById('welcome-modal-ok-btn');
+             const welcomeModalElement = document.getElementById('welcome-modal');
+             closeWelcomeModalBtn?.addEventListener('click', () => { if (welcomeModalElement) hideModal(welcomeModalElement); });
+             welcomeModalOkBtn?.addEventListener('click', () => { if (welcomeModalElement) hideModal(welcomeModalElement); });
+             window.addEventListener('click', (event) => { if (event.target === welcomeModalElement) { if (welcomeModalElement) hideModal(welcomeModalElement); } });
+             let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); if (animationFrameIdLogin) cancelAnimationFrame(animationFrameIdLogin); animationFrameIdLogin = null; if (animationFrameIdDashboard) cancelAnimationFrame(animationFrameIdDashboard); animationFrameIdDashboard = null; resizeTimeout = setTimeout(() => { startStopAnimations(); }, 250); });
+             if (trendContainer) { const trendIcons = ['📈', '📉', '₿', '💲', '🚀', '📊']; const trendCount = 15; trendContainer.innerHTML = ''; for (let i = 0; i < trendCount; i++) { const icon = document.createElement('div'); icon.style.position = 'absolute'; icon.style.color = 'rgba(255,255,255,0.04)'; icon.textContent = trendIcons[Math.floor(Math.random() * trendIcons.length)]; icon.style.left = `${Math.random() * 100}%`; icon.style.top = '-50px'; icon.style.fontSize = `${15 + Math.random() * 15}px`; icon.style.animation = `fall ${15 + Math.random() * 20}s linear ${Math.random() * 15}s infinite`; trendContainer.appendChild(icon); } let ruleExists = Array.from(document.styleSheets).some(sheet => { try { return Array.from(sheet.cssRules || []).some(rule => rule.type === CSSRule.KEYFRAMES_RULE && rule.name === 'fall'); } catch { return false; } }); if (!ruleExists) { const styleEl = document.createElement('style'); styleEl.innerHTML = `@keyframes fall { to { transform: translateY(110vh) rotate(${Math.random()*360}deg); opacity: 0; } }`; document.head.appendChild(styleEl); } }
+              checkAuth();
+         }
+         document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
